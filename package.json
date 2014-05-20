@@ -1,0 +1,37 @@
+{
+  "name": "conf-fu",
+  "description": "Advanced configuration with includes, variables and placeholders.",
+  "version": "0.1.0",
+  "keywords": [
+    "configuration",
+    "settings"
+  ],
+  "bin": { "conf-fu": "conf-fu" },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/apla/conf-fu.git"
+  },
+  "peerDependencies": {
+    "minimist": "*"
+  },
+  "engines": {
+    "node": ">=0.8.0",
+    "npm": ">=1.2.10"
+  },
+  "preferGlobal": true,
+  "homepage": "https://github.com/apla/conf-fu",
+  "author": "https://github.com/apla/",
+  "main": "index.js",
+  "directories": {
+    "example": "example",
+    "test": "test"
+  },
+  "optionalDependencies": {},
+  "_engineSupported": true,
+  "_defaultsLoaded": true,
+  "scripts": {
+    "test": "exit 0"
+  },
+  "license": "GPLv3",
+  "readmeFilename": "README.md"
+}
