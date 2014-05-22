@@ -14,6 +14,9 @@
   "peerDependencies": {
     "minimist": "*"
   },
+  "devDependencies": {
+    "mocha": "*"
+  },
   "engines": {
     "node": ">=0.8.0",
     "npm": ">=1.2.10"
@@ -30,7 +33,7 @@
   "_engineSupported": true,
   "_defaultsLoaded": true,
   "scripts": {
-    "test": "exit 0"
+    "test": "/usr/bin/env mocha --reporter list"
   },
   "license": "GPLv3",
   "readmeFilename": "README.md"

@@ -6,10 +6,10 @@ var util = require ('util');
 
 var EventEmitter = require ('events').EventEmitter;
 
-var common = require ('./common');
+var common = require ('./lib/common');
 
-var io    = require ('./fs-object');
-var paint = require ('./color');
+var io    = require ('./lib/fs-object');
+var paint = require ('./lib/color');
 
 paint.error  = paint.bind (paint, "red+white_bg");
 paint.path   = paint.cyan.bind (paint);
@@ -46,11 +46,8 @@ var ConfFu = function (configFile, configFixupFile) {
 		configFile: '',
 		configFixupFile: '',
 		instance: '',
-		instanceFile: '',
-		logger: console.log.bind (console)
+		instanceFile: ''
 	};
-	
-	this.log = console.log.bind (console);
 
 	if (configFile.constructor === String) {
 		// try to load this file
@@ -62,17 +59,17 @@ var ConfFu = function (configFile, configFixupFile) {
 		
 	}
 	
-	this.configFile.readFile (this.onConfigRead.bind (this));
-	this.configFixupFile.readFile (this.onFixupRead.bind (this));
+	// TODO: exclusive lock on config file to prevent multiple running scripts
+	process.nextTick (this.loadAll.bind (this));
 	
 	this.checkList = {
-		configLoaded:   null,
+		coreLoaded:     null,
 		includesLoaded: null,
 		fixupLoaded:    null,
 	}
 	
 	this.on ('configLoaded', function () {
-		this.checkList.configLoaded = true;
+		this.checkList.coreLoaded = true;
 		this.applyFixup ();
 	});
 	
@@ -81,14 +78,16 @@ var ConfFu = function (configFile, configFixupFile) {
 		this.applyFixup ();		
 	});
 	
-	this.on ('fixupFailed', function () {
-		this.checkList.fixupLoaded = false;
-		this.applyFixup ();
-	});
+	this.on ('error', this.errorHandler.bind (this));
 }
 
 util.inherits (ConfFu, EventEmitter);
 module.exports = ConfFu;
+
+ConfFu.prototype.loadAll = function () {
+	this.configFile.readFile (this.onConfigRead.bind (this));
+	this.configFixupFile.readFile (this.onFixupRead.bind (this));
+}
 
 ConfFu.prototype.formats = [{
 	type: "json",
@@ -114,12 +113,71 @@ ConfFu.prototype.formats = [{
 	}
 }];
 
+ConfFu.prototype.errorHandler = function (eOrigin, eType, eData, eFile) {
+	// origin can be config, fixup or include
+	// type can be file, parser, variables
+	
+	var logger = console.error.bind (console);
+	
+	if (!this.verbose)
+		logger = function () {};
+
+	if (eType === 'parse') {
+		var message = 'Config ' + eOrigin + ' (' + paint.path (eFile.path || eFile) + ') cannot be parsed:'
+		if (eData === null) {
+			logger (message, paint.error ('unknown format'));
+			logger (
+				'You can add new formats using ConfFu.prototype.formats.',
+				'Currently supported formats:',
+				this.formats.map (function (fmt) {return paint.path(fmt.type)}).join (', ')
+			);	
+		} else {
+			logger (message, paint.error (eData));
+		}
+	} else if (eType === 'file') {
+		this.checkList[eOrigin+'Loaded'] = false;
+		logger ("Config", eOrigin, "file error:", paint.error (eData));
+		if (eOrigin !== 'fixup') {
+			
+		}
+
+	} else if (eType === 'variables') {
+		this.logUnpopulated (eData);
+	}
+	
+
+}
+
+ConfFu.prototype.logUnpopulated = function(varPaths) {
+	var logger = console.error.bind (console);
+	
+	if (!this.verbose)
+		logger = function () {};
+
+	logger ("those config variables is unpopulated:");
+	for (var varPath in varPaths) {
+		var value = varPaths[varPath][0];
+		logger ("\t", paint.path(varPath), '=', value);
+		varPaths[varPath] = value || "<#undefined>";
+	}
+	logger (
+		"you can run",
+		paint.confFu ("config set <variable> <value>"),
+		"to define individual variable\nor edit",
+		paint.path (this.configFixupFile.path),
+		"to define all those vars at once"
+	);
+	// console.log (this.logUnpopulated.list);
+};
+
+
 ConfFu.prototype.applyFixup = function () {
-	if (this.checkList.configLoaded === null || this.checkList.fixupLoaded === null) {
+	if (this.checkList.coreLoaded === null || this.checkList.fixupLoaded === null) {
 		return;
 	}
 	// all files is loaded or failed
-	common.extend (true, this.config, this.configFixup);
+	if (this.configFixup)
+		common.extend (true, this.config, this.configFixup);
 	this.interpolateVars ();
 
 }
@@ -169,26 +227,10 @@ ConfFu.prototype.readInstance = function () {
 	});
 };
 
-ConfFu.prototype.logUnpopulated = function(varPaths) {
-	console.error ("those config variables is unpopulated:");
-	for (var varPath in varPaths) {
-		var value = varPaths[varPath][0];
-		console.log ("\t", paint.path(varPath), '=', value);
-		varPaths[varPath] = value || "<#undefined>";
-	}
-	console.error (
-		"you can run",
-		paint.confFu ("config set <variable> <value>"),
-		"to define individual variable\nor edit",
-		paint.path (this.configFixupFile.path),
-		"to define all those vars at once"
-	);
-	// console.log (this.logUnpopulated.list);
-};
-
 ConfFu.prototype.setVariables = function (fixupVars, force) {
 	var self = this;
 	// ensure fixup is defined
+	// TODO: migration from instance-based
 	if (!this.configFixupFile) {
 		console.log ('Cannot write to the fixup file with undefined instance. Please run', paint.confFu('init'));
 		process.kill ();
@@ -222,23 +264,24 @@ ConfFu.prototype.setVariables = function (fixupVars, force) {
 	);
 };
 
-ConfFu.prototype.parseConfig = function (configData, configFile) {
+ConfFu.prototype.parseConfig = function (configData, configFile, type) {
 	var self = this;
 	var result;
 	this.formats.some (function (format) {
 		var match = (""+configData).match (format.check);
 		if (match) {
 			result = format.parse (match, configData);
-			result.type = format.type;
+			result.type   = format.type;
 			return true;
 		}
 	});
+	// TODO: get actual error
 	if (!result) {
-		var message =
-			'Unknown file format in '+(configFile.path || configFile)+'; '
-			+ 'for now only JSON supported. You can add new formats using Project.prototype.formats.';
-		console.error (paint.error (message));
-		self.emit ('error', message);
+		self.emit ('error', type, 'parse', null, (configFile.path || configFile));
+		return {};
+	}	
+	if (result.error) {
+		self.emit ('error', type, 'parse', result.error, (configFile.path || configFile));
 	}
 	return result;
 }
@@ -330,16 +373,10 @@ ConfFu.prototype.interpolateVars = function (error) {
 
 	this.setVariables (self.variables);
 
-	// any other error take precendence over unpopulated vars
-	if (Object.keys(unpopulatedVars).length || error) {
-		if (unpopulatedVars) {
-			self.logUnpopulated(unpopulatedVars);
-		}
-		self.emit ('error', error || 'unpopulated variables');
+	if (Object.keys(unpopulatedVars).length) {
+		self.emit ('error', 'config', 'variables', unpopulatedVars);
 		return;
 	}
-
-	// console.log ('project ready');
 
 	self.emit ('ready');
 
@@ -350,25 +387,18 @@ ConfFu.prototype.onFixupRead = function (err, data) {
 	
 	var configFixup = {};
 	if (err) {
-		console.error (
-			"Config fixup file unavailable (" + paint.path (this.configFixupFile.path)+")",
-			"Please run", paint.confFu ('init')
-		);
-		this.emit ('fixupFailed');
+		this.emit ('error', 'fixup', 'file', err, this.configFixupFile.path);
+		return;
 	}
-	
-	var parsedFixup = this.parseConfig (data, this.configFixupFile);
+
+	var parsedFixup = this.parseConfig (data, this.configFixupFile, 'fixup');
 	if (parsedFixup.object) {
 		this.configFixup = configFixup = parsedFixup.object;
 	} else {
-		var message = 'Config fixup cannot be parsed:';
-		console.error (message, paint.error (parsedFixup.error));
-		this.emit ('error', message + ' ' + parsedFixup.error.toString());
-		process.kill ();
+		// process.kill ();
+		return;
 	}
 
-	console.log (this.configFixup);
-	
 	this.emit ('fixupLoaded');
 }
 
@@ -383,14 +413,12 @@ ConfFu.prototype.onConfigRead = function (err, data) {
 	}
 
 	var config;
-	var parsed = this.parseConfig (data, this.configFile);
+	var parsed = this.parseConfig (data, this.configFile, 'core');
 	if (parsed.object) {
 		config = parsed.object;
 	} else {
-		var message = 'Project config cannot be parsed:';
-		console.error (message, paint.error (parsed.error));
-		this.emit ('error', message + ' ' + parsed.error.toString());
 		process.kill ();
+		return;
 	}
 
 	this.id = config.id;
@@ -563,13 +591,17 @@ ConfFu.prototype.loadIncludes = function (config, level, cb) {
 				return;
 
 			}
-
+			
+			// TODO: remove self.root
+			
 			self.root.fileIO(incPath).readFile(function (err, data) {
 				if (err) {
 					onError(err);
 					return;
 				}
 
+				// TODO: use configParser
+				
 				self.loadIncludes(JSON.parse(data), path.join(level, DELIMITER, incPath), function(tree, includeConfig) {
 					configCache[incPath] = includeConfig;
 
