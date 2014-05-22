@@ -1,0 +1,15 @@
+{
+	"zzz": true,
+	"root": {
+		"zzz": "zzz",
+		"bbb": "<$zzz>"
+	},
+	"root2": {
+		"zzz": "zzzz",
+		"bbb": "<$zzz>"
+	},
+	"root3": {
+		"zzz": "zzzzz",
+		"bbb": "<$zzz>"
+	}
+}

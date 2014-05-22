@@ -9,7 +9,7 @@
   "bin": { "conf-fu": "bin/conf-fu.js" },
   "repository": {
     "type": "git",
-    "url": "git://github.com/apla/conf-fu.git"
+    "url": "https://github.com/apla/conf-fu.git"
   },
   "peerDependencies": {
     "minimist": "*"

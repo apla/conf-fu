@@ -52,10 +52,13 @@ var ConfFu = function (configFile, configFixupFile) {
 	if (configFile.constructor === String) {
 		// try to load this file
 		this.configFile      = new io (configFile);
+		this.configRoot      = this.configFile.parent();
 		this.configFixupFile = new io (configFixupFile);
 //		settings.configFixupFile = configFixupFile;
 		
 	} else {
+		// TODO: check for object type WITH proper keys
+		
 		
 	}
 	
@@ -425,7 +428,7 @@ ConfFu.prototype.onConfigRead = function (err, data) {
 
 	var self = this;
 	// TODO: load includes after fixup is loaded
-	this.loadIncludes(config, 'projectRoot', function (err, config, variables, placeholders) {
+	this.loadIncludes(config, 'projectRoot', this.configFile.path, function (err, config, variables, placeholders) {
 
 		self.variables    = variables;
 		self.placeholders = placeholders;
@@ -518,7 +521,7 @@ ConfFu.prototype.isEnchantedValue = function (value) {
 }
 
 
-ConfFu.prototype.loadIncludes = function (config, level, cb) {
+ConfFu.prototype.loadIncludes = function (config, level, basePath, cb) {
 	var self = this;
 
 	var DEFAULT_ROOT = this.configDir,
@@ -571,12 +574,33 @@ ConfFu.prototype.loadIncludes = function (config, level, cb) {
 		}
 		if ("include" in enchanted) {
 			len ++;
-			var incPath = enchanted.include;
-
-			if (0 !== incPath.indexOf('/')) {
-				incPath = path.join (DEFAULT_ROOT, incPath);
+			var incPath = path.normalize (enchanted.include);
+			
+			// here you can use some options to define include location:
+			// 1. relative path (with . or ..)
+			if (incPath.match (/\.+(\/|\\)/)) {
+				incPath = path.resolve (basePath, '..', incPath);
+			
+			// 2. absolute path
+			} else if (path.resolve (incPath) === incPath) {
+				// nothing to do
+			
+			// 3. configRoot, prefixed with 'config:' or without prefix
+			} else if (incPath.indexOf ('project:') === 0) {
+				incPath = path.join (self.projectRoot.path, incPath.substr (8));
+			
+			// 4. projectRoot, prefixed with 'project:'
+			} else {
+				
+				incPath = path.join (
+					self.configRoot.path,
+					incPath.indexOf ('config:') === 0
+						? incPath.substr (7)
+						: incPath
+				);
 			}
 
+			// TODO: check circular links
 			if (incPath in levelHash) {
 				//console.error('\n\n\nError: on level "' + level + '" key "' + key + '" linked to "' + value + '" in node:\n', node);
 				throw new Error('circular linking');
@@ -594,7 +618,9 @@ ConfFu.prototype.loadIncludes = function (config, level, cb) {
 			
 			// TODO: remove self.root
 			
-			self.root.fileIO(incPath).readFile(function (err, data) {
+			var incPathIO = new io (incPath);
+			
+			incPathIO.readFile(function (err, data) {
 				if (err) {
 					onError(err);
 					return;
@@ -602,7 +628,7 @@ ConfFu.prototype.loadIncludes = function (config, level, cb) {
 
 				// TODO: use configParser
 				
-				self.loadIncludes(JSON.parse(data), path.join(level, DELIMITER, incPath), function(tree, includeConfig) {
+				self.loadIncludes(JSON.parse(data), path.join(level, DELIMITER, incPath), incPath, function(tree, includeConfig) {
 					configCache[incPath] = includeConfig;
 
 					node[key] = util.clone(configCache[incPath]);

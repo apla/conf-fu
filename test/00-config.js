@@ -32,7 +32,7 @@ describe ("loading config", function () {
 		});
 	});
 	
-	it ("using config and good fixup should return config", function (done) {
+	it ("and good fixup should return config", function (done) {
 		var config = new confFu (path.join (configDir, 'index.json'), path.join (configDir, 'fixup.json'));
 		
 		config.verbose = globalVerbose || false;
@@ -46,7 +46,7 @@ describe ("loading config", function () {
 //		assert (Object.keys (config).length > 0, 'with keys');
 	});
 	
-	it ("using config and bad fixup should not return config", function (done) {
+	it ("and bad fixup should not return config", function (done) {
 		var config = new confFu (path.join (configDir, 'index.json'), path.join (configDir, 'wrong-format.json'));
 		
 		config.verbose = globalVerbose || false;
@@ -65,7 +65,7 @@ describe ("loading config", function () {
 //		assert (Object.keys (config).length > 0, 'with keys');
 	});
 
-	it ("using config and no fixup should return variables and create fixup", function (done) {
+	it ("and no fixup should return variables", function (done) {
 		var config = new confFu (path.join (configDir, 'index.json'), path.join (configDir, 'not-found.json'));
 		
 		config.verbose = globalVerbose || false;
@@ -87,4 +87,30 @@ describe ("loading config", function () {
 		});
 //		assert (Object.keys (config).length > 0, 'with keys');
 	});
-});  
+	it ("… and create fixup", function (done) {
+		fs.stat (path.join (configDir, 'not-found.json'), function (err, stats) {
+			assert (err === null);
+			done();
+		});
+	});
+
+	var configWIncludes;
+	
+	it ("with includes and fixup should return config", function (done) {
+		var config = new confFu (path.join (configDir, 'include.json'), path.join (configDir, 'include-fixup.json'));
+		
+		config.verbose = globalVerbose || false;
+		
+		config.on ('ready', function () {
+			
+//			console.log (JSON.stringify (config.config));
+			assert ("xxx" in config.config.root, "has 'xxx' in 'root'");
+			
+			configWIncludes = config.config;
+			
+			done ();
+		});
+	});
+	
+	
+});

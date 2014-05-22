@@ -13,7 +13,7 @@ var minimist = require ('minimist');
 //	configFixupFile: 'test/00-config/fixup.json'
 //});
 
-var conf = new confFu ('test/00-config/index.json', 'test/00-config/not-found.json');
+var conf = new confFu ('test/00-config/include.json', 'test/00-config/include-fixup.json');
 //var conf = new confFu ('test/00-config/index.json', 'test/00-config/empty.json');
 
 
