@@ -5,7 +5,19 @@ var MODULE_NAME = 'conf-fu';
 var path   = require ('path');
 var confFu = require (MODULE_NAME);
 
-var conf = new confFu ('config/index.json', 'config/fixup.json');
+var minimist = require ('minimist');
+
+//var conf = new confFu ({
+//	verbose: true,
+//	configFile: 'test/00-config/index.json',
+//	configFixupFile: 'test/00-config/fixup.json'
+//});
+
+var conf = new confFu ('test/00-config/index.json', 'test/00-config/not-found.json');
+//var conf = new confFu ('test/00-config/index.json', 'test/00-config/empty.json');
+
+
+conf.verbose = true;
 
 conf.on ('ready', function () {
 
@@ -14,6 +26,8 @@ conf.on ('ready', function () {
 conf.on ('error', function () {
 
 });
+
+// 
 
 
 function launchScript (conf, err) {
