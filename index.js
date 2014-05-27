@@ -582,8 +582,7 @@ ConfFu.prototype.loadIncludes = function (config, level, basePath, cb) {
 			return;
 		}
 		if ("error" in enchanted) {
-			console.error ('bad include tag:', "\"" + value + "\"");
-			onError();
+			self.emit ('error', 'include', 'parse', ('bad include tag:' + "\"" + value + "\""), (basePath.path || basePath));
 			return;
 		}
 		if ("include" in enchanted) {
@@ -612,7 +611,7 @@ ConfFu.prototype.loadIncludes = function (config, level, basePath, cb) {
 			
 			incPathIO.readFile(function (err, data) {
 				if (err) {
-					onError(err);
+					self.emit ('error', 'include', 'file', null, (basePath.path || basePath));
 					return;
 				}
 
