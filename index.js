@@ -37,8 +37,9 @@ var ConfFu = function (configFile, configFixupFile) {
 	// in simplest case you only need two parameters:
 	// configFile and configFixupFile
 	
-	if (!configFile)
+	if (!configFile) {
 		throw "no config file defined, please supply configFile and configFixupFile or settings object";
+	}
 	
 	var settings = {
 		projectRoot: '',
@@ -69,7 +70,7 @@ var ConfFu = function (configFile, configFixupFile) {
 		coreLoaded:     null,
 		includesLoaded: null,
 		fixupLoaded:    null,
-	}
+	};
 	
 	this.on ('configLoaded', function () {
 		this.checkList.coreLoaded = true;
@@ -78,11 +79,11 @@ var ConfFu = function (configFile, configFixupFile) {
 	
 	this.on ('fixupLoaded', function () {
 		this.checkList.fixupLoaded = true;
-		this.applyFixup ();		
+		this.applyFixup ();
 	});
 	
 	this.on ('error', this.errorHandler.bind (this));
-}
+};
 
 util.inherits (ConfFu, EventEmitter);
 module.exports = ConfFu;
@@ -90,7 +91,7 @@ module.exports = ConfFu;
 ConfFu.prototype.loadAll = function () {
 	this.configFile.readFile (this.onConfigRead.bind (this));
 	this.configFixupFile.readFile (this.onFixupRead.bind (this));
-}
+};
 
 ConfFu.prototype.formats = [{
 	type: "json",
@@ -122,18 +123,19 @@ ConfFu.prototype.errorHandler = function (eOrigin, eType, eData, eFile) {
 	
 	var logger = console.error.bind (console);
 	
-	if (!this.verbose)
+	if (!this.verbose) {
 		logger = function () {};
+	}
 
 	if (eType === 'parse') {
-		var message = 'Config ' + eOrigin + ' (' + paint.path (eFile.path || eFile) + ') cannot be parsed:'
+		var message = 'Config ' + eOrigin + ' (' + paint.path (eFile.path || eFile) + ') cannot be parsed:';
 		if (eData === null) {
 			logger (message, paint.error ('unknown format'));
 			logger (
 				'You can add new formats using ConfFu.prototype.formats.',
 				'Currently supported formats:',
-				this.formats.map (function (fmt) {return paint.path(fmt.type)}).join (', ')
-			);	
+				this.formats.map (function (fmt) {return paint.path(fmt.type);}).join (', ')
+			);
 		} else {
 			logger (message, paint.error (eData));
 		}
@@ -141,7 +143,7 @@ ConfFu.prototype.errorHandler = function (eOrigin, eType, eData, eFile) {
 		this.checkList[eOrigin+'Loaded'] = false;
 		logger ("Config", eOrigin, "file error:", paint.error (eData));
 		if (eOrigin !== 'fixup') {
-			
+			// TODO: maybe process.kill?
 		}
 
 	} else if (eType === 'variables') {
@@ -149,13 +151,14 @@ ConfFu.prototype.errorHandler = function (eOrigin, eType, eData, eFile) {
 	}
 	
 
-}
+};
 
 ConfFu.prototype.logUnpopulated = function(varPaths) {
 	var logger = console.error.bind (console);
 	
-	if (!this.verbose)
+	if (!this.verbose) {
 		logger = function () {};
+	}
 
 	logger ("those config variables is unpopulated:");
 	for (var varPath in varPaths) {
@@ -179,17 +182,18 @@ ConfFu.prototype.applyFixup = function () {
 		return;
 	}
 	// all files is loaded or failed
-	if (this.configFixup)
+	if (this.configFixup) {
 		common.extend (true, this.config, this.configFixup);
+	}
 	this.interpolateVars ();
 
-}
+};
 
 ConfFu.prototype.readInstance = function () {
 	var self = this;
 	this.instance = process.env.PROJECT_INSTANCE;
 	if (this.instance) {
-		console.log (paint.confFu(), 'instance is:', paint.path (instance));
+		console.log (paint.confFu(), 'instance is:', paint.path (this.instance));
 		self.emit ('instantiated');
 		return;
 	}
@@ -214,16 +218,18 @@ ConfFu.prototype.readInstance = function () {
 			// console.warn (paint.confFu(), 'instance not defined');
 		// } else {
 
-			var instance = (""+data).split (/\n/)[0];
-			self.instance = instance == "undefined" ? null : instance;
-			var args = [paint.confFu(), 'instance is:', paint.path (instance)];
-			if (err) {
-				args.push ('(' + paint.error (err) + ')');
-			} else if (self.legacy) {
-				console.error ("\tmv var/instance .dataflows/");
-			}
-			if (self.legacy) console.log ();
-			console.log.apply (console, args);
+		var instance = (""+data).split (/\n/)[0];
+		self.instance = instance == "undefined" ? null : instance;
+		var args = [paint.confFu(), 'instance is:', paint.path (instance)];
+		if (err) {
+			args.push ('(' + paint.error (err) + ')');
+		} else if (self.legacy) {
+			console.error ("\tmv var/instance .dataflows/");
+		}
+		if (self.legacy) {
+			console.log ();
+		}
+		console.log.apply (console, args);
 		// }
 
 		self.emit ('instantiated');
@@ -239,8 +245,9 @@ ConfFu.prototype.setVariables = function (fixupVars, force) {
 		process.kill ();
 	}
 
-	if (!this.configFixup)
+	if (!this.configFixup) {
 		this.configFixup = {};
+	}
 
 	// apply patch to fixup config
 	Object.keys (fixupVars).forEach (function (varPath) {
@@ -282,12 +289,12 @@ ConfFu.prototype.parseConfig = function (configData, configFile, type) {
 	if (!result) {
 		self.emit ('error', type, 'parse', null, (configFile.path || configFile));
 		return {};
-	}	
+	}
 	if (result.error) {
 		self.emit ('error', type, 'parse', result.error, (configFile.path || configFile));
 	}
 	return result;
-}
+};
 
 ConfFu.prototype.interpolateVars = function (error) {
 	// var variables = {};
@@ -302,8 +309,9 @@ ConfFu.prototype.interpolateVars = function (error) {
 			self.variables[fullKey][1] = value;
 		}
 
-		if ('string' !== typeof value)
+		if ('string' !== typeof value) {
 			return;
+		}
 
 		var enchanted = self.isEnchantedValue (value);
 		if (!enchanted) {
@@ -384,7 +392,7 @@ ConfFu.prototype.interpolateVars = function (error) {
 	self.emit ('ready');
 
 
-}
+};
 
 ConfFu.prototype.onFixupRead = function (err, data) {
 	
@@ -403,7 +411,7 @@ ConfFu.prototype.onFixupRead = function (err, data) {
 	}
 
 	this.emit ('fixupLoaded');
-}
+};
 
 ConfFu.prototype.onConfigRead = function (err, data) {
 
@@ -448,8 +456,9 @@ ConfFu.prototype.onConfigRead = function (err, data) {
 var configCache = {};
 
 ConfFu.prototype.iterateTree = function iterateTree (tree, cb, depth) {
-	if (null == tree)
+	if (null == tree) {
 		return;
+	}
 
 	var level = depth.length;
 
@@ -479,13 +488,14 @@ ConfFu.prototype.getKeyDesc = function (key) {
 		return result;
 	}
 	return result;
-}
+};
 
 
 ConfFu.prototype.getValue = function (key) {
 	var value = common.getByPath (key, this.config).value;
-	if (value === undefined)
+	if (value === undefined) {
 		return;
+	}
 	var enchanted = this.isEnchantedValue (value);
 	// if value is enchanted, then it definitely a string
 	if (enchanted && "variable" in enchanted) {
@@ -494,7 +504,7 @@ ConfFu.prototype.getValue = function (key) {
 		return result;
 	}
 	return value;
-}
+};
 
 ConfFu.prototype.isEnchantedValue = function (value) {
 
@@ -510,7 +520,9 @@ ConfFu.prototype.isEnchantedValue = function (value) {
 			return {"variable": check[1]};
 		} else if (check[2] === "#") {
 			result = {"placeholder": check[1]};
-			if (check[4]) result[check[4]] = check[5];
+			if (check[4]) {
+				result[check[4]] = check[5];
+			}
 			return result;
 		} else if (check[0].length === value.length) {
 			return {"include": check[1]};
@@ -518,7 +530,7 @@ ConfFu.prototype.isEnchantedValue = function (value) {
 			return {"error": true};
 		}
 	}
-}
+};
 
 
 ConfFu.prototype.loadIncludes = function (config, level, basePath, cb) {
@@ -553,12 +565,14 @@ ConfFu.prototype.loadIncludes = function (config, level, basePath, cb) {
 	function iterateNode (node, key, depth) {
 		var value = node[key];
 
-		if ('string' !== typeof value)
+		if ('string' !== typeof value) {
 			return;
+		}
 
 		var enchanted = self.isEnchantedValue (value);
-		if (!enchanted)
+		if (!enchanted) {
 			return;
+		}
 		if ("variable" in enchanted) {
 			variables[depth.join ('.')] = [value];
 			return;
