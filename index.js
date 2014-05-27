@@ -591,7 +591,10 @@ ConfFu.prototype.loadIncludes = function (config, level, basePath, cb) {
 		}
 		if ("include" in enchanted) {
 			len ++;
-			var incPath = self.getFilePath (basePath, path.normalize (enchanted.include));
+			var incPath = self.getFilePath (
+				path.resolve (basePath, '..'), // get a directory name
+				path.normalize (enchanted.include)
+			);
 
 			// TODO: check circular links
 			if (incPath in levelHash) {
@@ -609,8 +612,6 @@ ConfFu.prototype.loadIncludes = function (config, level, basePath, cb) {
 
 			}
 			
-			// TODO: remove self.root
-			
 			var incPathIO = new io (incPath);
 			
 			incPathIO.readFile(function (err, data) {
@@ -619,14 +620,19 @@ ConfFu.prototype.loadIncludes = function (config, level, basePath, cb) {
 					return;
 				}
 
-				// TODO: use configParser
-				
-				self.loadIncludes(JSON.parse(data), path.join(level, DELIMITER, incPath), incPath, function(tree, includeConfig) {
-					configCache[incPath] = includeConfig;
+				var parsedInclude = self.parseConfig (data, basePath, 'fixup');
+				if (parsedInclude.object) {
+					self.loadIncludes(parsedInclude.object, path.join(level, DELIMITER, incPath), incPath, function(tree, includeConfig) {
+						configCache[incPath] = includeConfig;
 
-					node[key] = util.clone(configCache[incPath]);
-					onLoad();
-				});
+						node[key] = util.clone(configCache[incPath]);
+						onLoad();
+					});	
+				} else {
+					self.emit ('error', 'include', 'parse', parsedInclude, (basePath.path || basePath));
+					// process.kill ();
+					return;
+				}
 			});
 
 		}
@@ -639,12 +645,12 @@ ConfFu.prototype.loadIncludes = function (config, level, basePath, cb) {
 	!len && cb(null, config, variables, placeholders);
 };
 
-ConfFu.prototype.getFilePath = function (basePath, pathTemplate) {
+ConfFu.prototype.getFilePath = function (baseDir, pathTemplate) {
 	
 	// here you can use some options to define include location:
 	// 1. relative path (with . or ..)
 	if (pathTemplate.match (/\.+(\/|\\)/)) {
-		pathTemplate = path.resolve (basePath, '..', pathTemplate);
+		pathTemplate = path.resolve (baseDir, pathTemplate);
 
 	// 2. absolute path
 	} else if (path.resolve (pathTemplate) === pathTemplate) {
