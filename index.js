@@ -98,7 +98,7 @@ ConfFu.prototype.formats = [{
 	check: /(\/\/\s*json[ \t\n\r]*)?[\{\[]/,
 	parse: function (match, configData) {
 		try {
-			var config = JSON.parse ((""+configData).substr (match[0].length - 1));
+			var config = JSON.parse (configData.toString().substr (match[0].length - 1));
 			return {object: config};
 		} catch (e) {
 			return {object: null, error: e};
@@ -107,13 +107,17 @@ ConfFu.prototype.formats = [{
 	stringify: JSON.stringify.bind (JSON),
 }, {
 	type: "ini",
-	check: /^;\s*ini/,
-	require: "ini",
-	parse: function () {
-
+	check: /^;|^\[([^\]]*)\]$/i,
+	parse: function (match, configData) {
+		var ini = require ('ini');
+		var config = ini.parse (configData.toString());
+		if (config === undefined)
+			return {object: null, error: "parse error"};
+		return {object: config};
 	},
-	stringify: function () {
-
+	stringify: function (jsObject) {
+		var ini = require ('ini');
+		return ini.stringify (jsObject);
 	}
 }];
 
