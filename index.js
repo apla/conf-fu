@@ -588,31 +588,7 @@ ConfFu.prototype.loadIncludes = function (config, level, basePath, cb) {
 		}
 		if ("include" in enchanted) {
 			len ++;
-			var incPath = path.normalize (enchanted.include);
-			
-			// here you can use some options to define include location:
-			// 1. relative path (with . or ..)
-			if (incPath.match (/\.+(\/|\\)/)) {
-				incPath = path.resolve (basePath, '..', incPath);
-			
-			// 2. absolute path
-			} else if (path.resolve (incPath) === incPath) {
-				// nothing to do
-			
-			// 3. configRoot, prefixed with 'config:' or without prefix
-			} else if (incPath.indexOf ('project:') === 0) {
-				incPath = path.join (self.projectRoot.path, incPath.substr (8));
-			
-			// 4. projectRoot, prefixed with 'project:'
-			} else {
-				
-				incPath = path.join (
-					self.configRoot.path,
-					incPath.indexOf ('config:') === 0
-						? incPath.substr (7)
-						: incPath
-				);
-			}
+			var incPath = self.getFilePath (basePath, path.normalize (enchanted.include));
 
 			// TODO: check circular links
 			if (incPath in levelHash) {
@@ -658,4 +634,32 @@ ConfFu.prototype.loadIncludes = function (config, level, basePath, cb) {
 //	console.log('including:', level, config);
 
 	!len && cb(null, config, variables, placeholders);
+};
+
+ConfFu.prototype.getFilePath = function (basePath, pathTemplate) {
+	
+	// here you can use some options to define include location:
+	// 1. relative path (with . or ..)
+	if (pathTemplate.match (/\.+(\/|\\)/)) {
+		pathTemplate = path.resolve (basePath, '..', pathTemplate);
+
+	// 2. absolute path
+	} else if (path.resolve (pathTemplate) === pathTemplate) {
+		// nothing to do
+
+	// 3. configRoot, prefixed with 'config:' or without prefix
+	} else if (pathTemplate.indexOf ('project:') === 0) {
+		pathTemplate = path.join (this.projectRoot.path, pathTemplate.substr (8));
+
+	// 4. projectRoot, prefixed with 'project:'
+	} else {
+
+		pathTemplate = path.join (
+			this.configRoot.path,
+			pathTemplate.indexOf ('config:') === 0 ? pathTemplate.substr (7) : pathTemplate
+		);
+	}
+
+	return pathTemplate;
+	
 };

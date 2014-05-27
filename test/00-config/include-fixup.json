@@ -11,5 +11,9 @@
 	"root3": {
 		"zzz": "zzzzz",
 		"bbb": "<$zzz>"
+	},
+	"root4": {
+		"zzz": "oooooo",
+		"bbb": "<$zzz>"
 	}
 }

@@ -18,14 +18,14 @@ describe ("tech debt", function () {
 		todos.forEach (function (todoText) {
 			it.skip (todoText);
 //			console.log (todoText);
-		})
+		});
 	}
 
 });
 
 describe ("loading config", function () {
 	
-	before (function(done) {
+	beforeEach (function(done) {
 		// TODO: unlink not-found.json
 		fs.unlink (path.join (configDir, 'not-found.json'), function () {
 			done ();
@@ -76,7 +76,10 @@ describe ("loading config", function () {
 		});
 		config.on ('error', function (eOrigin, eType, eData, eFile) {
 			if (eType === 'variables') {
-				done();
+				fs.stat (path.join (configDir, 'not-found.json'), function (err, stats) {
+					assert (err === null);
+					done();
+				});
 			} else if (eType === 'file' && eOrigin === 'fixup') {
 				// that's ok, because we create fixup in case of his abscence
 			} else {
@@ -87,19 +90,30 @@ describe ("loading config", function () {
 		});
 //		assert (Object.keys (config).length > 0, 'with keys');
 	});
-	it ("… and create fixup", function (done) {
-		fs.stat (path.join (configDir, 'not-found.json'), function (err, stats) {
-			assert (err === null);
-			done();
+
+	it ("with includes and no fixup should return variables", function (done) {
+		var config = new confFu (path.join (configDir, 'include.json'), path.join (configDir, 'not-found.json'));
+		
+		config.verbose = globalVerbose || false;
+		
+		config.on ('error', function (eOrigin, eType, eData, eFile) {
+			if (eType === 'variables') {
+				done();
+			}			
 		});
 	});
 
+	
 	var configWIncludes;
 	
 	it ("with includes and fixup should return config", function (done) {
 		var config = new confFu (path.join (configDir, 'include.json'), path.join (configDir, 'include-fixup.json'));
 		
 		config.verbose = globalVerbose || false;
+		
+		config.on ('error', function () {
+//			console.log (arguments);
+		});
 		
 		config.on ('ready', function () {
 			
@@ -111,6 +125,9 @@ describe ("loading config", function () {
 			done ();
 		});
 	});
-	
+
+	it.skip ("with extra keys in fixup should return config, but emit error", function (done) {
+	});
+
 	
 });

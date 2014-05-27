@@ -1,5 +1,6 @@
 {
 	"root": "<index.json>",
-	"root2": "<index.json>",
-	"root3": "<config:index.json>"
+	"root2": "<../00-config/index.json>",
+	"root3": "<./index.json>",
+	"root4": "<config:index.json>"
 }
