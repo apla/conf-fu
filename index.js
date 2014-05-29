@@ -100,33 +100,40 @@ ConfFu.prototype.loadAll = function () {
 		this.configFixupFile.readFile (this.onFixupRead.bind (this));
 };
 
-ConfFu.prototype.formats = [{
-	type: "json",
-	check: /(\/\/\s*json[ \t\n\r]*)?[\{\[]/,
-	parse: function (match, configData) {
-		try {
-			var config = JSON.parse (configData.toString().substr (match[0].length - 1));
+ConfFu.prototype.formats = {
+	json: {
+		type: "json",
+		check: /(\/\/\s*json[ \t\n\r]*)?[\{\[]/,
+		parse: function (match, configData) {
+			try {
+				var string = configData.toString();
+				if (match)
+					string = string.substr (match[0].length - 1);
+				var config = JSON.parse (string);
+				return {object: config};
+			} catch (e) {
+				return {object: null, error: e};
+			}
+		},
+		stringify: JSON.stringify.bind (JSON)
+	},
+	ini: {
+		type: "ini",
+		check: /^;|^\[([^\]]*)\]$/mi,
+		parse: function (match, configData) {
+			var ini = require ('ini');
+			var config = ini.parse (configData.toString());
+			if (config === undefined)
+				return {object: null, error: "parse error"};
 			return {object: config};
-		} catch (e) {
-			return {object: null, error: e};
+
+		},
+		stringify: function (jsObject) {
+			var ini = require ('ini');
+			return ini.stringify (jsObject);
 		}
-	},
-	stringify: JSON.stringify.bind (JSON),
-}, {
-	type: "ini",
-	check: /^;|^\[([^\]]*)\]$/i,
-	parse: function (match, configData) {
-		var ini = require ('ini');
-		var config = ini.parse (configData.toString());
-		if (config === undefined)
-			return {object: null, error: "parse error"};
-		return {object: config};
-	},
-	stringify: function (jsObject) {
-		var ini = require ('ini');
-		return ini.stringify (jsObject);
 	}
-}];
+};
 
 ConfFu.prototype.errorHandler = function (eOrigin, eType, eData, eFile) {
 	// origin can be config, fixup or include
@@ -547,7 +554,7 @@ ConfFu.prototype.getValue = function (key) {
 
 ConfFu.prototype.isEnchantedValue = function (value) {
 
-	var tagRe = /<(([\$\#]*)((optional|default):)?([^>]+))>/;
+	var tagRe = /<(([\$\#]*)((optional|default):)*([^>]+))>/;
 	var result;
 
 	if ('string' !== typeof value) {
@@ -591,8 +598,8 @@ ConfFu.prototype.loadIncludes = function (config, level, basePath, cb) {
 
 	function onLoad() {
 		cnt += 1;
-		if (cnt >= len) {
-			cb(null, config, variables, placeholders);
+		if (cnt == len) {
+			cb (null, config, variables, placeholders);
 		}
 	}
 
@@ -655,7 +662,7 @@ ConfFu.prototype.loadIncludes = function (config, level, basePath, cb) {
 					return;
 				}
 
-				var parsedInclude = self.parseConfig (data, basePath, 'fixup');
+				var parsedInclude = self.parseConfig (data, incPath, 'include');
 				if (parsedInclude.object) {
 					self.loadIncludes(parsedInclude.object, path.join(level, DELIMITER, incPath), incPath, function(tree, includeConfig) {
 						configCache[incPath] = includeConfig;

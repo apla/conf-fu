@@ -77,8 +77,7 @@ describe ("loading config", function () {
 		config.on ('error', function (eOrigin, eType, eData, eFile) {
 			if (eType === 'variables') {
 				fs.stat (path.join (configDir, 'not-found.json'), function (err, stats) {
-					assert (err === null);
-					done();
+					done (err);
 				});
 			} else if (eType === 'file' && eOrigin === 'fixup') {
 				// that's ok, because we create fixup in case of his abscence
@@ -96,10 +95,19 @@ describe ("loading config", function () {
 		
 		config.verbose = globalVerbose || false;
 		
+		config.on ('ready', function () {
+			console.error ("unexpected ready");
+		});
+		
 		config.on ('error', function (eOrigin, eType, eData, eFile) {
 			if (eType === 'variables') {
 				done();
-			}			
+				return;
+			} else if (eType === 'file' && eOrigin === 'fixup') {
+				// config fixup not found
+				return;
+			}
+			console.error ("unexpected error", arguments);
 		});
 	});
 
@@ -121,6 +129,34 @@ describe ("loading config", function () {
 			assert ("xxx" in config.config.root, "has 'xxx' in 'root'");
 			
 			configWIncludes = config.config;
+			
+			done ();
+		});
+	});
+
+	var iniTest = it.skip;
+	try {
+		var ini = require ('ini');
+		iniTest = it;
+	} catch (e) {
+		
+	}
+	
+	iniTest ("ini with json includes and fixup should return config", function (done) {
+		var config = new confFu (path.join (configDir, 'index.ini'), path.join (configDir, 'ini-fixup.json'));
+		
+		config.verbose = globalVerbose || false;
+		
+		config.on ('error', function () {
+			console.log (arguments);
+		});
+		
+		config.on ('ready', function () {
+			
+//			console.log (JSON.stringify (config.config));
+			assert ("zzz" in config.config.database.include.root, "has 'zzz' in 'root'");
+			
+//			console.trace ();
 			
 			done ();
 		});

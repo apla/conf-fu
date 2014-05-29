@@ -1,0 +1,23 @@
+{
+	"zzz": false,
+	"database": {
+		"include": {
+			"root": {
+				"zzz": null,
+				"bbb": "<$zzz>"
+			},
+			"root2": {
+				"zzz": 0,
+				"bbb": "<$zzz>"
+			},
+			"root3": {
+				"zzz": [],
+				"bbb": "<$zzz>"
+			},
+			"root4": {
+				"zzz": {},
+				"bbb": "<$zzz>"
+			}
+		}
+	}
+}
