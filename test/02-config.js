@@ -2,26 +2,13 @@ var path   = require ('path');
 var fs     = require ('fs');
 var assert = require ('assert');
 
-
 var confFu     = require ('../index');
 var confFuPath = require.resolve('../index');
 
 // TODO: use script name
-var configDir = path.join (__dirname, '00-config');
+var configDir = path.join (__dirname, '02-config');
 
 var globalVerbose = process.env.VERBOSE || false;
-
-describe ("tech debt", function () {
-	var confFuContents = fs.readFileSync (confFuPath);
-	var todos = confFuContents.toString().match (/TODO[^\n\r]+|WTF[^\n\r]+/g);
-	if (todos) {
-		todos.forEach (function (todoText) {
-			it.skip (todoText);
-//			console.log (todoText);
-		});
-	}
-
-});
 
 describe ("loading config", function () {
 	
@@ -120,7 +107,7 @@ describe ("loading config", function () {
 		config.verbose = globalVerbose || false;
 		
 		config.on ('error', function () {
-//			console.log (arguments);
+			console.log (arguments);
 		});
 		
 		config.on ('ready', function () {
@@ -185,6 +172,9 @@ describe ("loading config", function () {
 			done ();
 		});
 	});
+	
+	it.skip ('expansion in external files', function (done) {});
+	
 	it.skip ("with extra keys in fixup should return config, but emit error", function (done) {
 	});
 
