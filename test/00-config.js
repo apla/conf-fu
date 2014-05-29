@@ -128,6 +128,27 @@ describe ("loading config", function () {
 
 	it.skip ('with falsy variables', function (done) {});
 	
+	it ('with optional placeholders and defaults', function (done) {
+		var config = new confFu (path.join (configDir, 'placeholders.json'));
+		
+		config.verbose = globalVerbose || false;
+		
+		config.on ('error', function () {
+			console.log (arguments);
+		});
+		
+		config.on ('ready', function () {
+			
+			assert ("default-val" in config.config, "has default key");
+			assert (config.config["default-val"] === "12345", "has default key");
+			assert ("optional-val" in config.config, "has optional key");
+			assert (config.config["optional-val"] === null, "has optional key");
+//			console.log (JSON.stringify (config.config));
+//			assert ("zzz" in config.config.database.include.root, "has 'zzz' in 'root'");
+			
+			done ();
+		});
+	});
 	it.skip ("with extra keys in fixup should return config, but emit error", function (done) {
 	});
 

@@ -50,22 +50,6 @@ var ConfFu = function (configFile, configFixupFile) {
 		instanceFile: ''
 	};
 
-	if (configFile.constructor === String) {
-		// try to load this file
-		this.configFile      = new io (configFile);
-		this.configRoot      = this.configFile.parent();
-		this.configFixupFile = new io (configFixupFile);
-//		settings.configFixupFile = configFixupFile;
-		
-	} else {
-		// TODO: check for object type WITH proper keys
-		
-		
-	}
-	
-	// TODO: exclusive lock on config file to prevent multiple running scripts
-	process.nextTick (this.loadAll.bind (this));
-	
 	this.checkList = {
 		coreLoaded:     null,
 		includesLoaded: null,
@@ -83,6 +67,28 @@ var ConfFu = function (configFile, configFixupFile) {
 	});
 	
 	this.on ('error', this.errorHandler.bind (this));
+
+	if (configFile.constructor === String) {
+		// try to load this file
+		this.configFile      = new io (configFile);
+		this.configRoot      = this.configFile.parent();
+		if (configFixupFile) {
+			this.configFixupFile = new io (configFixupFile);
+		} else {
+			this.emit ('error', 'fixup', 'file', "fixup file name is undefined", null);
+		}
+		
+//		settings.configFixupFile = configFixupFile;
+		
+	} else {
+		// TODO: check for object type WITH proper keys
+		
+		
+	}
+	
+	// TODO: exclusive lock on config file to prevent multiple running scripts
+	process.nextTick (this.loadAll.bind (this));
+
 };
 
 util.inherits (ConfFu, EventEmitter);
@@ -90,7 +96,8 @@ module.exports = ConfFu;
 
 ConfFu.prototype.loadAll = function () {
 	this.configFile.readFile (this.onConfigRead.bind (this));
-	this.configFixupFile.readFile (this.onFixupRead.bind (this));
+	if (this.configFixupFile)
+		this.configFixupFile.readFile (this.onFixupRead.bind (this));
 };
 
 ConfFu.prototype.formats = [{
@@ -244,10 +251,6 @@ ConfFu.prototype.setVariables = function (fixupVars, force) {
 	var self = this;
 	// ensure fixup is defined
 	// TODO: migration from instance-based
-	if (!this.configFixupFile) {
-		console.log ('Cannot write to the fixup file with undefined instance. Please run', paint.confFu('init'));
-		process.kill ();
-	}
 
 	if (!this.configFixup) {
 		this.configFixup = {};
@@ -272,24 +275,56 @@ ConfFu.prototype.setVariables = function (fixupVars, force) {
 		});
 	});
 
-	// wrote config to the fixup file
-	this.configFixupFile.writeFile (
-		JSON.stringify (this.configFixup, null, "\t")
-	);
+	if (this.configFixupFile) {
+		// wrote config to the fixup file
+		this.configFixupFile.writeFile (
+			JSON.stringify (this.configFixup, null, "\t")
+		);
+	} else {
+		console.error ('fixup file name is undefined, cannot write to the fixup file');
+		if (Object.keys (fixupVars).length) {
+			
+//			process.kill ();
+		}
+	}
+
 };
 
 ConfFu.prototype.parseConfig = function (configData, configFile, type) {
 	var self = this;
 	var result;
-	this.formats.some (function (format) {
-		var match = (""+configData).match (format.check);
+	
+	var configFileExt = path.extname(configFile.path || configFile).substr (1);
+	if (configFileExt in this.formats) {
+		var format = this.formats[configFileExt];
+		var match = configData.toString().match (format.check);
 		if (match) {
 			result = format.parse (match, configData);
-			result.type   = format.type;
-			return true;
+			result.type = format.type;
+		} else {
+			console.log ('file extension and format check doesn\'t match:');
+			console.log ('file ext:    ', configFileExt);
+			console.log ('file name:   ', (configFile.path || configFile));
+			console.log ('contents:    ', configData.toString().substr (0, 100), '...');
+			console.log ('format check:', format.check);
+			result = {
+				error: "parser by extension cannot parse config file contents (format.check doesn't match')"
+			};
 		}
-	});
-	// TODO: get actual error
+	} else {
+		Object.keys (this.formats).some (function (formatExt) {
+			var format = this.formats[formatExt];
+			var match = configData.toString().match (format.check);
+			if (match) {
+				result = format.parse (match, configData);
+				result.type = format.type;
+				return true;
+			} else if (result.type) {
+				return true;
+			}
+		});
+	}
+	
 	if (!result) {
 		self.emit ('error', type, 'parse', null, (configFile.path || configFile));
 		return {};
