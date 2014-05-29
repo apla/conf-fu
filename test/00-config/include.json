@@ -1,4 +1,7 @@
 {
+	"zero-value": 0,
+	"false-value": false,
+	"null-value": null,
 	"root": "<index.json>",
 	"root2": "<../00-config/index.json>",
 	"root3": "<./index.json>",

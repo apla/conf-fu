@@ -359,7 +359,7 @@ ConfFu.prototype.interpolateVars = function (error) {
 				}
 				self.variables[fullKey] = [value];
 			} else if (varValue.value !== undefined) {
-				node[key] = common.interpolate (value, self.config, {start: '<', end: '>'});
+				node[key] = common.interpolate (value, self.config, {start: '<', end: '>', typeRaw: '$', typeSafe: '🐸'});
 				self.variables[fullKey] = [value, node[key]];
 			} else {
 				self.variables[fullKey] = [value];

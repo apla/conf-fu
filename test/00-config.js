@@ -126,6 +126,8 @@ describe ("loading config", function () {
 		});
 	});
 
+	it.skip ('with falsy variables', function (done) {});
+	
 	it.skip ("with extra keys in fixup should return config, but emit error", function (done) {
 	});
 
