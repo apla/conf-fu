@@ -288,7 +288,7 @@ ConfFu.prototype.setVariables = function (fixupVars, force) {
 			JSON.stringify (this.configFixup, null, "\t")
 		);
 	} else {
-		console.error ('fixup file name is undefined, cannot write to the fixup file');
+		console.error (paint.confFu(), 'fixup file name is undefined, cannot write to the fixup file');
 		if (Object.keys (fixupVars).length) {
 			
 //			process.kill ();
@@ -309,7 +309,7 @@ ConfFu.prototype.parseConfig = function (configData, configFile, type) {
 			result = format.parse (match, configData);
 			result.type = format.type;
 		} else {
-			console.log ('file extension and format check doesn\'t match:');
+			console.log (paint.confFu(), 'file extension and format check doesn\'t match:');
 			console.log ('file ext:    ', configFileExt);
 			console.log ('file name:   ', (configFile.path || configFile));
 			console.log ('contents:    ', configData.toString().substr (0, 100), '...');
