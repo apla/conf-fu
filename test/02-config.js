@@ -5,8 +5,8 @@ var assert = require ('assert');
 var confFu     = require ('../index');
 var confFuPath = require.resolve('../index');
 
-// TODO: use script name
-var configDir = path.join (__dirname, '02-config');
+var assets = path.basename (__filename, path.extname (__filename));
+var configDir = path.join (__dirname, assets);
 
 var globalVerbose = process.env.VERBOSE || false;
 
