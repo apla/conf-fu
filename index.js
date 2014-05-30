@@ -386,27 +386,15 @@ ConfFu.prototype.interpolateVars = function (error) {
 			// we must write both variable path and a key,
 			// containing it to the fixup
 
-			var varValue = self.getKeyDesc (enchanted.variable.substr (1));
-			if (varValue.enchanted !== undefined) {
-				if ("variable" in varValue.enchanted) {
-					console.error (
-						"variable value cannot contains another variables. used variable",
-						paint.path(enchanted.variable),
-						"which resolves to",
-						paint.path (varValue.value),
-						"in key",
-						paint.path(fullKey)
-					);
-					process.kill ();
-				}
+			var interpolated = enchanted.interpolated (self.config);
+//			console.log ('%%%%%%%%%%%%%%%%%%%%%%%', enchanted, interpolated);
+			if (interpolated === undefined) {
+				// erroneous fields is in enchanted.failure
 				self.variables[fullKey] = [value];
-			} else if (varValue.value !== undefined) {
-				node[key] = common.interpolate (value, self.config, {start: '<', end: '>', typeRaw: '$', typeSafe: '🐸'});
-				self.variables[fullKey] = [value, node[key]];
 			} else {
-				self.variables[fullKey] = [value];
+				node[key] = interpolated;
+				self.variables[fullKey] = [value, node[key]];
 			}
-
 			return;
 		}
 		// this cannot happens, but i can use those checks for assertions
@@ -530,7 +518,6 @@ ConfFu.prototype.getKeyDesc = function (key) {
 	result.enchanted = this.isEnchantedValue (result.value);
 	// if value is enchanted, then it definitely a string
 	if (result.enchanted && "variable" in result.enchanted) {
-		result.interpolated = result.value.interpolate();
 		return result;
 	}
 	return result;
@@ -555,26 +542,44 @@ ConfFu.prototype.getValue = function (key) {
 ConfFu.prototype.isEnchantedValue = function (value) {
 
 	var tagRe = /<(([\$\#]*)((optional|default):)*([^>]+))>/;
+	var variableRe    = /<((\$)((int|quoted|bool):)?([^>]+))>/i;
+	var variableReg   = /<((\$)((int|quoted|bool):)?([^>]+))>/ig;
+	var placeholderRe = /^<((\#)((optional|default):)?([^>]+))>$/i;
+	var includeRe     = /^<<([^<>]+)>>$/i;
+
 	var result;
 
 	if ('string' !== typeof value) {
 		return;
 	}
-	var check = value.match (tagRe);
-	if (check) {
-		if (check[2] === "$") {
-			return {"variable": check[1]};
-		} else if (check[2] === "#") {
-			result = {"placeholder": check[1]};
+	
+	var self = this;
+	
+	var check;
+	if (check = value.match (variableRe)) {
+		var marks = {start: '<', end: '>', typeRaw: '$', typeSafe: '🐸'};
+		var result = {
+			variable: check[5],
+			type:     check[4],
+			interpolated: function (dictionary) {
+				var toInterpolate = value.replace (variableReg, "<$$$5>");
+				try {
+					return common.interpolate (value, dictionary, marks, true);
+				} catch (e) {
+					result.failure = e;
+					return undefined;
+				};
+			}
+		};
+		return result;
+	} else if (check = value.match (placeholderRe)) {
+		result = {"placeholder": check[5]};
 			if (check[4]) {
 				result[check[4]] = check[5];
 			}
 			return result;
-		} else if (check[0].length === value.length) {
-			return {"include": check[1]};
-		} else {
-			return {"error": true};
-		}
+	} else if (check = value.match (includeRe)) {
+		return {"include": check[1]};
 	}
 };
 
