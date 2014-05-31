@@ -42,12 +42,18 @@ var ConfFu = function (configFile, configFixupFile) {
 	}
 	
 	var settings = {
-		projectRoot: '',
-		configRoot: '',
 		configFile: '',
+		configRoot: '',
 		configFixupFile: '',
 		instance: '',
-		instanceFile: ''
+		instanceFile: '',
+		projectRoot: ''
+	};
+	
+	var aliases = {
+		project:  'projectRoot',
+		config:   'configFile',
+		fixup:    'configFixupFile'
 	};
 
 	this.checkList = {
@@ -78,11 +84,39 @@ var ConfFu = function (configFile, configFixupFile) {
 			this.emit ('error', 'fixup', 'file', "fixup file name is undefined", null);
 		}
 		
-//		settings.configFixupFile = configFixupFile;
-		
 	} else {
-		// TODO: check for object type WITH proper keys
+		this.configFile   = new io (configFile.configFile || configFile.config);
+		if (configFile.configRoot) {
+			this.configRoot = new io (configFile.configRoot);
+		} else {
+			this.configRoot = this.configFile.parent();
+		}
 		
+		this.instance     = configFile.instance;
+		if (configFile.configRoot) {
+			this.instanceFile = new io (configFile.instanceFile);
+		}
+		if (configFile.projectRoot)
+			this.projectRoot  = new io (configFile.projectRoot);
+
+		configFixupFile = configFile.configFixupFile || configFile.fixup;
+		if (configFixupFile) {
+			this.fixupEnchantment;
+			if (this.fixupEnchantment = this.isEnchantedValue (configFixupFile)) {
+				// TODO: check and die when another variables is present
+				if (this.instance) {
+					configFixupFile = this.fixupEnchantment.interpolated ({
+						instance: this.instance
+					});
+					if (configFixupFile)
+						this.configFixupFile = new io (configFixupFile);
+				}
+			} else {
+				this.configFixupFile = new io (configFixupFile);
+			}
+		} else {
+			this.emit ('error', 'fixup', 'file', "fixup file name is undefined", null);
+		}
 		
 	}
 	
@@ -98,6 +132,9 @@ ConfFu.prototype.loadAll = function () {
 	this.configFile.readFile (this.onConfigRead.bind (this));
 	if (this.configFixupFile)
 		this.configFixupFile.readFile (this.onFixupRead.bind (this));
+	if (this.instanceFile)
+		this.instanceFile.readFile (this.onInstanceRead.bind (this));
+	
 };
 
 ConfFu.prototype.formats = {
@@ -206,6 +243,24 @@ ConfFu.prototype.applyFixup = function () {
 	this.interpolateVars ();
 
 };
+
+ConfFu.prototype.onInstanceRead = function (err, data) {
+	if (err) {
+		this.emit ('error', 'instance', 'file', err, this.instanceFile.path);
+		return;
+	}
+	
+	this.instance = data.toString().trim();
+	
+	var configFixupFile = this.fixupEnchantment.interpolated ({
+		instance: this.instance
+	});
+	
+	if (configFixupFile) {
+		this.configFixupFile = new io (configFixupFile);
+		this.configFixupFile.readFile (this.onFixupRead.bind (this));
+	}
+}
 
 ConfFu.prototype.readInstance = function () {
 	var self = this;

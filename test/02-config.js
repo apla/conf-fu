@@ -172,6 +172,42 @@ describe ("loading config", function () {
 			done ();
 		});
 	});
+
+	it ('with params dictionary', function (done) {
+		var config = new confFu ({
+			config: path.join (configDir, 'include.json'),
+			fixup: path.join (configDir, 'include-fixup.json')
+		});
+		
+		config.verbose = globalVerbose || false;
+		
+		config.on ('error', function () {
+			console.log (arguments);
+		});
+		
+		config.on ('ready', function () {
+			
+//			console.log (JSON.stringify (config.config));
+			assert ("xxx" in config.config.root, "has 'xxx' in 'root'");
+			
+			configWIncludes = config.config;
+			
+			done ();
+		});
+
+	});
+
+	it ('with instance in fixup name', function (done) {
+		var config = new confFu ({
+			config: path.join (configDir, 'include.json'),
+			fixup: path.join (configDir, '<$instance>-fixup.json'),
+			instance: 'include'
+		});
+
+		config.on ('ready', function () {
+			done ();
+		});
+});
 	
 	it.skip ('expansion in external files', function (done) {});
 	
