@@ -93,6 +93,9 @@ var ConfFu = function (configFile, configFixupFile) {
 		}
 		
 		this.instance     = configFile.instance;
+		if (configFile.instanceFile)
+			this.instanceFile = new io (configFile.instanceFile);
+
 		if (configFile.configRoot) {
 			this.instanceFile = new io (configFile.instanceFile);
 		}
@@ -117,7 +120,6 @@ var ConfFu = function (configFile, configFixupFile) {
 		} else {
 			this.emit ('error', 'fixup', 'file', "fixup file name is undefined", null);
 		}
-		
 	}
 	
 	// TODO: exclusive lock on config file to prevent multiple running scripts

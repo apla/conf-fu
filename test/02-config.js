@@ -207,7 +207,24 @@ describe ("loading config", function () {
 		config.on ('ready', function () {
 			done ();
 		});
-});
+	});
+
+	it ('with instance in fixup name and instance file', function (done) {
+		var config = new confFu ({
+			config: path.join (configDir, 'include.json'),
+			fixup: path.join (configDir, '<$instance>-fixup.json'),
+			instanceFile: path.join (configDir, 'instance')
+		});
+
+		config.on ('error', function () {
+			console.log (arguments);
+		});
+		
+		config.on ('ready', function () {
+			done ();
+		});
+	});
+
 	
 	it.skip ('expansion in external files', function (done) {});
 	
