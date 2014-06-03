@@ -22,7 +22,7 @@ var globalVerbose = process.env.VERBOSE || false;
 
 
 describe ("parse string", function () {
-	
+
 	it ("with include enchantment", function () {
 		var enchanted = confFu.prototype.isEnchantedValue ("<<include>>");
 		return "include" in enchanted;
@@ -57,11 +57,54 @@ describe ("parse string", function () {
 
 });
 
+describe ("format string", function () {
+
+	var data = {
+		http_host: 12345,
+		http_domain: "example.net",
+		have_db: false,
+	};
+
+	it ("raw int", function () {
+		var enchanted = confFu.prototype.isEnchantedValue ("<$http_host>");
+		var interpolated = enchanted.interpolated (data);
+		return parseInt (interpolated) === interpolated;
+	});
+	it.skip ("string as int", function () {
+		var enchanted = confFu.prototype.isEnchantedValue ("<$int:http_domain>");
+		var interpolated = enchanted.interpolated (data);
+		assert (interpolated === undefined);
+		console.log (interpolated, enchanted);
+		return;
+	});
+	it.skip ("bool", function () {
+		var enchanted = confFu.prototype.isEnchantedValue ("<$bool:have_db>");
+		assert (enchanted.type === 'bool');
+		return "variable" in enchanted;
+	});
+	it.skip ("bool with custom status", function () {
+		var enchanted = confFu.prototype.isEnchantedValue ("<$bool(on|off):have_db>");
+		assert (enchanted.type === 'bool');
+		return "variable" in enchanted;
+	});
+	it.skip ("bool with custom status and default", function () {
+		var enchanted = confFu.prototype.isEnchantedValue ("<$bool(on|off):have_db=off>");
+		assert (enchanted.type === 'bool');
+		return "variable" in enchanted;
+	});
+	it.skip ("quoted string", function () {
+		var enchanted = confFu.prototype.isEnchantedValue ("<$string(\"\"):http_domain>");
+		assert (enchanted.type === 'bool');
+		return "variable" in enchanted;
+	});
+
+});
+
 //		if ("placeholder" in enchanted) {
 //			if (enchanted.optional) {
 //			} else if (enchanted.default) {
 //			}
 //		} else if ("variable" in enchanted) {
 //		} else if ("error" in enchanted || "include" in enchanted) {
-//			
+//
 //		}

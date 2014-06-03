@@ -621,7 +621,7 @@ ConfFu.prototype.isEnchantedValue = function (value) {
 			interpolated: function (dictionary) {
 				var toInterpolate = value.replace (variableReg, "<$$$5>");
 				try {
-					return common.interpolate (value, dictionary, marks, true);
+					return common.interpolate (toInterpolate, dictionary, marks, true);
 				} catch (e) {
 					result.failure = e;
 					return undefined;
