@@ -278,8 +278,6 @@ ConfFu.prototype.interpolateAlien = function (alienFileTmpl, alienFile, cb) {
 			return;
 		};
 
-		console.log ('!!!!!', path.extname (alienFileTmpl.path), self.alienExt, alienFileTmpl.path.slice (0, -1 * self.alienExt.length));
-		
 		if (alienFile === false || alienFile === null) {
 			// TODO: emit something if cb is undefined?
 			cb && cb (error, interpolated);
