@@ -1,12 +1,14 @@
 {
   "name": "conf-fu",
   "description": "Advanced configuration with includes, variables and placeholders.",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "keywords": [
     "configuration",
     "settings"
   ],
-  "bin": { "conf-fu": "bin/conf-fu.js" },
+  "bin": {
+	  "conf-fu": "bin/conf-fu.js"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/apla/conf-fu.git"
