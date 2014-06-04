@@ -126,11 +126,12 @@ var ConfFu = function (configFile, configFixupFile) {
 	
 	// TODO: exclusive lock on config file to prevent multiple running scripts
 	process.nextTick (this.loadAll.bind (this));
-
 };
 
 util.inherits (ConfFu, EventEmitter);
 module.exports = ConfFu;
+
+ConfFu.prototype.paint = paint;
 
 ConfFu.prototype.loadAll = function () {
 	this.configFile.readFile (this.onConfigRead.bind (this));
@@ -219,19 +220,23 @@ ConfFu.prototype.logUnpopulated = function(varPaths) {
 		logger = function () {};
 	}
 
-	logger ("those config variables is unpopulated:");
+	logger (paint.error ("those config variables is unpopulated:"));
 	for (var varPath in varPaths) {
 		var value = varPaths[varPath][0];
 		logger ("\t", paint.path(varPath), '=', value);
 		varPaths[varPath] = value || "<#undefined>";
 	}
-	logger (
+	var messageChunks = [
+		this.configFixupFile? "" : "you must define fixup path, then",
 		"you can run",
-		paint.confFu ("config set <variable> <value>"),
-		"to define individual variable\nor edit",
-		paint.path (this.configFixupFile.path),
+		"\n" + paint.confFu ("TODO: <variable> <value>"),
+		"\nto define individual variables or edit",
+		this.configFixupFile ? paint.path (this.configFixupFile.path) : "fixup file",
 		"to define all those vars at once"
-	);
+	];
+	
+	logger.apply (console, messageChunks);
+		
 	// console.log (this.logUnpopulated.list);
 };
 

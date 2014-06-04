@@ -5,17 +5,24 @@ var MODULE_NAME = 'conf-fu';
 var path   = require ('path');
 var confFu = require (MODULE_NAME);
 
-var minimist = require ('minimist');
+var options = require ('minimist')(process.argv.slice(2));
 
-//var conf = new confFu ({
-//	verbose: true,
-//	configFile: 'test/00-config/index.json',
-//	configFixupFile: 'test/00-config/fixup.json'
-//});
+var paint = confFu.paint;
 
-var conf = new confFu ('test/00-config/include.json', 'test/00-config/include-fixup.json');
-//var conf = new confFu ('test/00-config/index.json', 'test/00-config/empty.json');
+if (!options.config)
+	options.config = process.env.CONF_FU;
 
+if (!options.config) {
+	console.log (paint.confFu (), "please define core config file using CONF_FU environment variable or --config command line option");
+}
+
+if (!options.fixup)
+	options.fixup = process.env.CONF_FU_FIXUP;
+
+if (!options.instance)
+	options.instance = process.env.CONF_FU_INSTANCE || process.env.INSTANCE;
+
+var conf = new confFu (options);
 
 conf.verbose = true;
 
@@ -23,8 +30,20 @@ conf.on ('ready', function () {
 
 });
 
-conf.on ('error', function () {
-
+conf.on ('error', function (eOrigin, eType, eData, eFile) {
+	// origin can be config, fixup or include
+	// type can be file, parser, variables
+	
+	var logger = console.error.bind (console);
+	
+	if (eType === 'parse') {
+		process.kill ();
+	} else if (eType === 'file') {
+		if (eOrigin !== 'fixup') {
+			process.kill ();
+		}
+	} else if (eType === 'variables') {
+	}
 });
 
 // 
