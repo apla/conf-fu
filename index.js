@@ -40,6 +40,8 @@ var ConfFu = function (configFile, configFixupFile) {
 	if (!configFile) {
 		throw "no config file defined, please supply configFile and configFixupFile or settings object";
 	}
+
+	this.alienExt = 'conf-fu';
 	
 	var settings = {
 		configFile: '',
@@ -245,6 +247,56 @@ ConfFu.prototype.applyFixup = function () {
 	this.interpolateVars ();
 
 };
+
+ConfFu.prototype.interpolateAlien = function (alienFileTmpl, alienFile, cb) {
+	if (!(alienFileTmpl instanceof io)) {
+		alienFileTmpl = new io (alienFileTmpl);
+	}
+		
+	var self = this;
+	
+	alienFileTmpl.readFile (function (err, data) {
+		if (err) {
+			this.emit ('error', 'alien', 'file', err, alienFileTmpl.path);
+			return;
+		}
+		
+		// TODO: stream parser
+		var value = data.toString();
+		
+		// TODO: remove copy-paste
+		var variableReg   = /<((\$)((int|quoted|bool)(\(([^\)]*)\))?:)?([^>=]+)(=([^>]*))?)>/gi;
+		var marks = {start: '<', end: '>', typeRaw: '$', typeSafe: '🐸'};
+		var toInterpolate = value.replace (variableReg, "<$$$7>");
+		var interpolated, error;
+		try {
+			interpolated = common.interpolate (toInterpolate, self.config, marks, true);
+		} catch (e) {
+			error = e;
+			// TODO: emit something if cb is undefined?
+			cb && cb (error, interpolated);
+			return;
+		};
+
+		console.log ('!!!!!', path.extname (alienFileTmpl.path), self.alienExt, alienFileTmpl.path.slice (0, -1 * self.alienExt.length));
+		
+		if (alienFile === false || alienFile === null) {
+			// TODO: emit something if cb is undefined?
+			cb && cb (error, interpolated);
+			return;
+		} else if ((alienFile === true || alienFile === undefined) && alienFileTmpl.extension === self.alienExt) {
+			alienFile = new io (alienFileTmpl.path.slice (0, -1 * (self.alienExt.length + 1)));
+		} else if (!(alienFile instanceof io)) { // assumed string path
+			alienFile = new io (alienFile);
+		}
+		
+		alienFile.writeFile (interpolated, function (err) {
+			cb && cb (err, interpolated);
+		});
+		
+		
+	});
+}
 
 ConfFu.prototype.onInstanceRead = function (err, data) {
 	if (err) {
@@ -599,8 +651,8 @@ ConfFu.prototype.getValue = function (key) {
 ConfFu.prototype.isEnchantedValue = function (value) {
 
 	var tagRe = /<(([\$\#]*)((optional|default):)*([^>]+))>/;
-	var variableRe    = /<((\$)((int|quoted|bool):)?([^>]+))>/i;
-	var variableReg   = /<((\$)((int|quoted|bool):)?([^>]+))>/ig;
+	var variableRe    = /<((\$)((int|quoted|bool)(\(([^\)]*)\))?:)?([^>=]+)(=([^>]*))?)>/i;
+	var variableReg   = /<((\$)((int|quoted|bool)(\(([^\)]*)\))?:)?([^>=]+)(=([^>]*))?)>/ig;
 	var placeholderRe = /^<((\#)((optional|default):)?([^>]+))>$/i;
 	var includeRe     = /^<<([^<>]+)>>$/i;
 
@@ -616,10 +668,12 @@ ConfFu.prototype.isEnchantedValue = function (value) {
 	if (check = value.match (variableRe)) {
 		var marks = {start: '<', end: '>', typeRaw: '$', typeSafe: '🐸'};
 		var result = {
-			variable: check[5],
+			variable: check[7],
 			type:     check[4],
+			typeArgs: check[6],
+			defaults: check[9],
 			interpolated: function (dictionary) {
-				var toInterpolate = value.replace (variableReg, "<$$$5>");
+				var toInterpolate = value.replace (variableReg, "<$$$7>");
 				try {
 					return common.interpolate (toInterpolate, dictionary, marks, true);
 				} catch (e) {

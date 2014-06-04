@@ -13,7 +13,7 @@ var globalVerbose = process.env.VERBOSE || false;
 //var regexp0 = /<(([\$\#]*)((optional|default):)*([^>]+))>/;
 //console.log ("<$optional:db.mongo.port>".match (regexp0));
 //console.log ("<filename>".match (regexp0));
-//var regexp1 = /<((\$)((int|quoted|bool):)?([^>]+))>/i;
+//var regexp1 = /<((\$)((int|quoted|bool)(\([^\)]*\))?:)?([^>=]+)(=[^>]*)?)>/i;
 //var regexp2 = /<((\#)((optional|default):)?([^>]+))>/i;
 //var regexp3 = /^<<([^<>]+)>>$/i;
 //console.log ("<$int:db.mongo.port>".match (regexp1));
