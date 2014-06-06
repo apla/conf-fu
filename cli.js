@@ -1,28 +1,5 @@
 var confFu = require ('./index');
 
-confFu.prototype.cli = function (options) {
-	this.verbose = true;
-
-	this.on ('ready', onConfigReady.bind (this, options));
-
-	this.on ('error', function (eOrigin, eType, eData, eFile) {
-		// origin can be config, fixup or include
-		// type can be file, parser, variables
-
-		var logger = console.error.bind (console);
-
-		if (eType === 'parse') {
-			process.kill ();
-		} else if (eType === 'file') {
-			if (eOrigin !== 'fixup') {
-				process.kill ();
-			}
-		} else if (eType === 'variables') {
-		}
-	});
-
-}
-
 function onConfigReady (options) {
 	// options must be handled before variables setup
 	if (options.dump === 'json') {
@@ -42,4 +19,23 @@ function onConfigReady (options) {
 
 }
 
-module.exports = confFu;
+function onConfigError (options, eOrigin, eType, eData, eFile) {
+	// origin can be config, fixup or include
+	// type can be file, parser, variables
+
+	var logger = console.error.bind (console);
+
+	if (eType === 'parse') {
+		process.kill ();
+	} else if (eType === 'file') {
+		if (eOrigin !== 'fixup') {
+			process.kill ();
+		}
+	} else if (eType === 'variables') {
+	}
+}
+	
+module.exports = {
+	onConfigError: onConfigError,
+	onConfigReady: onConfigReady
+};
