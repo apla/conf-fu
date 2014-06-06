@@ -279,7 +279,7 @@ ConfFu.prototype.interpolateAlien = function (alienFileTmpl, alienFile, cb) {
 		} catch (e) {
 			error = e;
 			self.emit ('error', 'alien', 'variables', e);
-			self.setVariables (e);
+			self.setVariables (e, true);
 			// TODO: emit something if cb is undefined?
 			cb && cb (error, interpolated);
 			return;
