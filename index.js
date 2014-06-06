@@ -131,7 +131,7 @@ var ConfFu = function (configFile, configFixupFile) {
 util.inherits (ConfFu, EventEmitter);
 module.exports = ConfFu;
 
-ConfFu.prototype.paint = paint;
+ConfFu.paint = paint;
 
 ConfFu.prototype.loadAll = function () {
 	this.configFile.readFile (this.onConfigRead.bind (this));
@@ -262,7 +262,7 @@ ConfFu.prototype.interpolateAlien = function (alienFileTmpl, alienFile, cb) {
 	
 	alienFileTmpl.readFile (function (err, data) {
 		if (err) {
-			this.emit ('error', 'alien', 'file', err, alienFileTmpl.path);
+			self.emit ('error', 'alien', 'file', err, alienFileTmpl.path);
 			return;
 		}
 		
