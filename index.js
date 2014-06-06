@@ -222,7 +222,7 @@ ConfFu.prototype.logUnpopulated = function(varPaths) {
 
 	logger (paint.error ("those config variables is unpopulated:"));
 	for (var varPath in varPaths) {
-		var value = varPaths[varPath][0];
+		var value = (varPaths[varPath] && varPaths[varPath].constructor === Array) ? varPaths[varPath][0] : varPaths[varPath];
 		logger ("\t", paint.path(varPath), '=', value);
 		varPaths[varPath] = value || "<#undefined>";
 	}
@@ -278,6 +278,8 @@ ConfFu.prototype.interpolateAlien = function (alienFileTmpl, alienFile, cb) {
 			interpolated = common.interpolate (toInterpolate, self.config, marks, true);
 		} catch (e) {
 			error = e;
+			self.emit ('error', 'alien', 'variables', e);
+			self.setVariables (e);
 			// TODO: emit something if cb is undefined?
 			cb && cb (error, interpolated);
 			return;
@@ -294,7 +296,7 @@ ConfFu.prototype.interpolateAlien = function (alienFileTmpl, alienFile, cb) {
 		}
 		
 		alienFile.writeFile (interpolated, function (err) {
-			cb && cb (err, interpolated);
+			cb && cb (err, interpolated, alienFile);
 		});
 		
 		
@@ -384,7 +386,7 @@ ConfFu.prototype.setVariables = function (fixupVars, force) {
 			var newRoot = root[chunk];
 			if (index === chunks.length - 1) {
 				if (force || !(chunk in root)) {
-					root[chunk] = fixupVars[varPath][0] || "<#undefined>";
+					root[chunk] = (fixupVars[varPath] && fixupVars[varPath].constructor === Array) ? fixupVars[varPath][0] : fixupVars[varPath] || "<#undefined>";
 				}
 			} else if (!newRoot) {
 				root[chunk] = {};
