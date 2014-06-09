@@ -64,7 +64,7 @@ describe ("loading config", function () {
 		config.on ('error', function (eOrigin, eType, eData, eFile) {
 			if (eType === 'variables') {
 				fs.stat (path.join (configDir, 'not-found.json'), function (err, stats) {
-					done (err);
+					if (err && err.code === 'ENOENT') done ();
 				});
 			} else if (eType === 'file' && eOrigin === 'fixup') {
 				// that's ok, because we create fixup in case of his abscence
@@ -72,7 +72,6 @@ describe ("loading config", function () {
 				assert (false, 'just got unexpected error');
 				done ();
 			}
-			
 		});
 //		assert (Object.keys (config).length > 0, 'with keys');
 	});
