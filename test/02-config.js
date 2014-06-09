@@ -149,6 +149,26 @@ describe ("loading config", function () {
 		});
 	});
 
+	iniTest ("ini with json includes and ini fixup should return config", function (done) {
+		var config = new confFu (path.join (configDir, 'index.ini'), path.join (configDir, 'ini-fixup.ini'));
+
+		config.verbose = globalVerbose || false;
+
+		config.on ('error', function () {
+			console.log (arguments);
+		});
+
+		config.on ('ready', function () {
+
+			//			console.log (JSON.stringify (config.config));
+			assert ("zzz" in config.config.database.include.root, "has 'zzz' in 'root'");
+
+			//			console.trace ();
+
+			done ();
+		});
+	});
+
 	it.skip ('with falsy variables', function (done) {});
 	
 	it ('with optional placeholders and defaults', function (done) {

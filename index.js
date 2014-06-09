@@ -157,7 +157,9 @@ ConfFu.prototype.formats = {
 				return {object: null, error: e};
 			}
 		},
-		stringify: JSON.stringify.bind (JSON)
+		stringify: function (jsObject) {
+			return JSON.stringify (jsObject, null, "\t");
+		}
 	},
 	ini: {
 		type: "ini",
@@ -398,9 +400,14 @@ ConfFu.prototype.setVariables = function (fixupVars, force) {
 
 	if (this.configFixupFile) {
 		// wrote config to the fixup file
-		this.configFixupFile.writeFile (
-			JSON.stringify (this.configFixup, null, "\t")
-		);
+		var validFixupString;
+		if (this.configFixupFile.stringify)
+			validFixupString = this.configFixupFile.stringify (this.configFixup);
+		
+		if (validFixupString)
+			this.configFixupFile.writeFile (
+				validFixupString
+			);
 	} else {
 		console.error (paint.confFu(), 'fixup file name is undefined, cannot write to the fixup file');
 		if (Object.keys (fixupVars).length) {
@@ -420,6 +427,10 @@ ConfFu.prototype.parseConfig = function (configData, configFile, type) {
 		var format = this.formats[configFileExt];
 		var match = configData.toString().match (format.check);
 		if (match) {
+			if (configFile && configFile.path) {
+				configFile.parse     = format.parse;
+				configFile.stringify = format.stringify;
+			}
 			result = format.parse (match, configData);
 			result.type = format.type;
 		} else {
@@ -437,6 +448,10 @@ ConfFu.prototype.parseConfig = function (configData, configFile, type) {
 			var format = this.formats[formatExt];
 			var match = configData.toString().match (format.check);
 			if (match) {
+				if (configFile && configFile.path) {
+					configFile.parse     = format.parse;
+					configFile.stringify = format.stringify;
+				}
 				result = format.parse (match, configData);
 				result.type = format.type;
 				return true;
