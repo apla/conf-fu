@@ -163,7 +163,7 @@ ConfFu.prototype.formats = {
 	},
 	ini: {
 		type: "ini",
-		check: /^;|^\[([^\]]*)\]$/mi,
+//		check: /^;|^\[([^\]]*)\]$/mi,
 		parse: function (match, configData) {
 			var ini = require ('ini');
 			var config = ini.parse (configData.toString());
