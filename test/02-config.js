@@ -20,7 +20,10 @@ describe ("loading config", function () {
 	});
 	
 	it ("and good fixup should return config", function (done) {
-		var config = new confFu (path.join (configDir, 'index.json'), path.join (configDir, 'fixup.json'));
+		var config = new confFu ({
+			configFile: path.join (configDir, 'index.json'), 
+			fixupFile:  path.join (configDir, 'fixup.json')
+		});
 		
 		config.verbose = globalVerbose || false;
 		
@@ -34,7 +37,10 @@ describe ("loading config", function () {
 	});
 	
 	it ("and bad fixup should not return config", function (done) {
-		var config = new confFu (path.join (configDir, 'index.json'), path.join (configDir, 'wrong-format.json'));
+		var config = new confFu ({
+			configFile: path.join (configDir, 'index.json'), 
+			fixupFile:  path.join (configDir, 'wrong-format.json')
+		});
 		
 		config.verbose = globalVerbose || false;
 		
@@ -53,7 +59,10 @@ describe ("loading config", function () {
 	});
 
 	it ("and no fixup should return variables", function (done) {
-		var config = new confFu (path.join (configDir, 'index.json'), path.join (configDir, 'not-found.json'));
+		var config = new confFu ({
+			configFile: path.join (configDir, 'index.json'), 
+			fixupFile:  path.join (configDir, 'not-found.json')
+		});
 		
 		config.verbose = globalVerbose || false;
 		
@@ -64,7 +73,10 @@ describe ("loading config", function () {
 		config.on ('error', function (eOrigin, eType, eData, eFile) {
 			if (eType === 'variables') {
 				fs.stat (path.join (configDir, 'not-found.json'), function (err, stats) {
-					if (err && err.code === 'ENOENT') done ();
+					if (!err) {
+						// this file must be created
+						done ();
+					}
 				});
 			} else if (eType === 'file' && eOrigin === 'fixup') {
 				// that's ok, because we create fixup in case of his abscence
@@ -77,7 +89,10 @@ describe ("loading config", function () {
 	});
 
 	it ("with includes and no fixup should return variables", function (done) {
-		var config = new confFu (path.join (configDir, 'include.json'), path.join (configDir, 'not-found.json'));
+		var config = new confFu ({
+			configFile: path.join (configDir, 'include.json'), 
+			fixupFile:  path.join (configDir, 'not-found.json')
+		});
 		
 		config.verbose = globalVerbose || false;
 		
@@ -101,7 +116,10 @@ describe ("loading config", function () {
 	var configWIncludes;
 	
 	it ("with includes and fixup should return config", function (done) {
-		var config = new confFu (path.join (configDir, 'include.json'), path.join (configDir, 'include-fixup.json'));
+		var config = new confFu ({
+			configFile: path.join (configDir, 'include.json'), 
+			fixupFile:  path.join (configDir, 'include-fixup.json')
+		});
 		
 		config.verbose = globalVerbose || false;
 		
@@ -129,7 +147,10 @@ describe ("loading config", function () {
 	}
 	
 	iniTest ("ini with json includes and fixup should return config", function (done) {
-		var config = new confFu (path.join (configDir, 'index.ini'), path.join (configDir, 'ini-fixup.json'));
+		var config = new confFu ({
+			configFile: path.join (configDir, 'index.ini'), 
+			fixupFile:  path.join (configDir, 'ini-fixup.json')
+		});
 		
 		config.verbose = globalVerbose || false;
 		
@@ -149,7 +170,10 @@ describe ("loading config", function () {
 	});
 
 	iniTest ("ini with json includes and ini fixup should return config", function (done) {
-		var config = new confFu (path.join (configDir, 'index.ini'), path.join (configDir, 'ini-fixup.ini'));
+		var config = new confFu ({
+			configFile: path.join (configDir, 'index.ini'), 
+			fixupFile:  path.join (configDir, 'ini-fixup.ini')
+		});
 
 		config.verbose = globalVerbose || false;
 
@@ -171,7 +195,9 @@ describe ("loading config", function () {
 	it.skip ('with falsy variables', function (done) {});
 	
 	it ('with optional placeholders and defaults', function (done) {
-		var config = new confFu (path.join (configDir, 'placeholders.json'));
+		var config = new confFu ({
+			configFile: path.join (configDir, 'placeholders.json')
+		});
 		
 		config.verbose = globalVerbose || false;
 		
@@ -194,8 +220,8 @@ describe ("loading config", function () {
 
 	it ('with params dictionary', function (done) {
 		var config = new confFu ({
-			config: path.join (configDir, 'include.json'),
-			fixup: path.join (configDir, 'include-fixup.json')
+			configFile: path.join (configDir, 'include.json'),
+			fixupFile:  path.join (configDir, 'include-fixup.json')
 		});
 		
 		config.verbose = globalVerbose || false;
@@ -218,8 +244,8 @@ describe ("loading config", function () {
 
 	it ('with instance in fixup name', function (done) {
 		var config = new confFu ({
-			config: path.join (configDir, 'include.json'),
-			fixup: path.join (configDir, '<$instance>-fixup.json'),
+			configFile: path.join (configDir, 'include.json'),
+			fixupFile:  path.join (configDir, '<$instance>-fixup.json'),
 			instance: 'include'
 		});
 
@@ -230,8 +256,8 @@ describe ("loading config", function () {
 
 	it ('with instance in fixup name and instance file', function (done) {
 		var config = new confFu ({
-			config: path.join (configDir, 'include.json'),
-			fixup: path.join (configDir, '<$instance>-fixup.json'),
+			configFile: path.join (configDir, 'include.json'),
+			fixupFile:  path.join (configDir, '<$instance>-fixup.json'),
 			instanceFile: path.join (configDir, 'instance')
 		});
 

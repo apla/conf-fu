@@ -25,7 +25,10 @@ var globalVerbose = process.env.VERBOSE || false;
 describe ("interpolate vars in external file", function () {
 	
 	it ("with include enchantment", function (done) {
-		var config = new confFu (path.join (configDir, 'index.json'), path.join (configDir, 'fixup.json'));
+		var config = new confFu ({
+			configFile: path.join (configDir, 'index.json'), 
+			fixupFile: path.join (configDir, 'fixup.json')
+		});
 		
 		config.verbose = globalVerbose || false;
 		
