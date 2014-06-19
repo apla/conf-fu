@@ -3,3 +3,18 @@
 # Example .gitignore files: https://github.com/github/gitignore
 
 test/04-alien/httpd.conf
+
+test/02-config/not-found.json
+
+.*.swp
+._*
+.DS_Store
+.git
+.hg
+.lock-wscript
+.svn
+.wafpickle-*
+CVS
+npm-debug.log
+
+conf-fu-ria
