@@ -188,8 +188,13 @@ ConfFuIO.prototype.applyFixup = function () {
 		return;
 	}
 	
-	this.super_.prototype.applyFixup.call (this);
-
+	if (this.super_.prototype.applyFixup.call (this)) {
+		this.emit ('ready');
+		// TODO: wait for all file operations to complete
+		this.ready = true;
+	} else {
+		this.emit ('error', 'config', 'variables', this.unpopulatedVariables ());
+	}
 };
 
 ConfFuIO.prototype.interpolateAlien = function (alienFileTmpl, alienFile, cb) {

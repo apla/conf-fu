@@ -67,7 +67,7 @@ describe ("loading config", function () {
 		config.verbose = globalVerbose || false;
 		
 		config.on ('ready', function () {
-			assert (false, 'parse error for any config file is fatal error');
+			assert (false, 'config not populated');
 			done ();
 		});
 		config.on ('error', function (eOrigin, eType, eData, eFile) {
@@ -76,7 +76,9 @@ describe ("loading config", function () {
 					if (!err) {
 						// this file must be created
 						done ();
+						return;
 					}
+					assert (false, 'filesystem not fast enough to create this file, we must wrap around this case');
 				});
 			} else if (eType === 'file' && eOrigin === 'fixup') {
 				// that's ok, because we create fixup in case of his abscence

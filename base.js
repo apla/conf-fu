@@ -1,7 +1,15 @@
 var ConfFu = function (options) {
-	if (!options) {
-		throw "no config file defined, please supply options and fixupFile or settings object";
+	if (!options || !options.config) {
+		throw "no options defined, please supply config and fixup";
 	}
+	
+	this.config = options.config;
+	this.fixup  = options.fixup;
+	
+	this.variables    = {};
+	this.placeholders = {};
+
+	this.ready = this.applyFixup ();
 };
 
 ConfFu.prototype.formats = require ('./formats');
@@ -213,8 +221,7 @@ ConfFu.prototype.applyFixup = function () {
 		extend (this.config, this.fixup);
 	}
 	
-	this.interpolateVars ();
-
+	return this.interpolateVars ();
 };
 
 ConfFu.prototype.interpolateVars = function (error) {
@@ -280,26 +287,28 @@ ConfFu.prototype.interpolateVars = function (error) {
 
 	self.iterateTree (self.config, iterateNode, []);
 
-	var unpopulatedVars = {};
+	var unpopulatedVars = this.unpopulatedVariables ();
 
-	var varNames = Object.keys (self.variables);
+	this.setVariables (self.variables);
+
+	if (Object.keys(unpopulatedVars).length) {
+		return;
+	}
+
+	return true;
+};
+
+ConfFu.prototype.unpopulatedVariables = function (fixupVars, force) {
+	var unpopulatedVars = {};
+	var varNames = Object.keys (this.variables);
+	var self = this;
 	varNames.forEach (function (varName) {
 		if (self.variables[varName][1] === undefined) {
 			unpopulatedVars[varName] = self.variables[varName];
 		}
 	});
-
-	this.setVariables (self.variables);
-
-	if (Object.keys(unpopulatedVars).length) {
-		self.emit ('error', 'config', 'variables', unpopulatedVars);
-		return;
-	}
-
-	self.emit ('ready');
-
-
-};
+	return unpopulatedVars;
+}
 
 ConfFu.prototype.setVariables = function (fixupVars, force) {
 	var self = this;
