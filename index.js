@@ -6,8 +6,6 @@ var util = require ('util');
 
 var EventEmitter = require ('events').EventEmitter;
 
-var common = require ('./lib/common');
-
 var io    = require ('./io');
 var paint = require ('./lib/color');
 
@@ -40,15 +38,21 @@ function inheritsMixin (sub, sup) {
 	sub.prototype = Object.create (sup.prototype);
 	var sprot = sub.prototype;
 	
+	sprot.super_  = sup;
+	sprot.super_.init = sup.bind (sub);
+
+	for (var key in sup) {
+		if (sup.hasOwnProperty(key)) {
+			sub[key] = sup[key];
+		}
+	}
+	
 	var mixins = [].slice.call (arguments, 2);
 	mixins.forEach (function (mixin) {
 		Object.keys (mixin.prototype).forEach (function(key) {
 			sprot[key] = mixin.prototype[key];
 		});
 	});
-	
-	sprot.super_  = sup;
-	sprot.super_.init = sup.bind (sub);
 	
 	sprot.mixins_ = mixins;
 	sprot.mixins_.init = function () {
@@ -82,7 +86,7 @@ function ConfFuIO (options) {
 
 	this.on ('error', this.errorHandler.bind (this));
 
-	this.configFile   = new io (options.configFile || options.config);
+	this.configFile   = new io (options.configFile);
 	
 	if (options.configRoot) {
 		this.configRoot = new io (options.configRoot);
@@ -100,7 +104,7 @@ function ConfFuIO (options) {
 	if (options.projectRoot)
 		this.projectRoot  = new io (options.projectRoot);
 
-	var fixupFile = options.fixupFile || options.fixup;
+	var fixupFile = options.fixupFile;
 	if (fixupFile) {
 		this.fixupEnchantment;
 		if (this.fixupEnchantment = this.isEnchantedValue (fixupFile)) {
@@ -130,9 +134,9 @@ inheritsMixin (ConfFuIO, ConfFu, EventEmitter);
 
 module.exports = ConfFuIO;
 
-//ConfFu.paint = paint;
+ConfFuIO.paint = paint;
 
-ConfFu.prototype.loadAll = function () {
+ConfFuIO.prototype.loadAll = function () {
 	this.configFile.readAndParseFile (this.onConfigRead.bind (this));
 	if (this.fixupFile)
 		this.fixupFile.readAndParseFile (this.onFixupRead.bind (this));
@@ -141,7 +145,7 @@ ConfFu.prototype.loadAll = function () {
 	
 };
 
-ConfFu.prototype.errorHandler = function (eOrigin, eType, eData, eFile) {
+ConfFuIO.prototype.errorHandler = function (eOrigin, eType, eData, eFile) {
 	// origin can be config, fixup or include
 	// type can be file, parser, variables
 	
@@ -179,51 +183,20 @@ ConfFu.prototype.errorHandler = function (eOrigin, eType, eData, eFile) {
 
 };
 
-ConfFu.prototype.logUnpopulated = function(varPaths) {
-	var logger = console.error.bind (console);
-	
-	if (!this.verbose) {
-		logger = function () {};
-	}
-
-	logger (paint.error ("those config variables is unpopulated:"));
-	for (var varPath in varPaths) {
-		var value = (varPaths[varPath] && varPaths[varPath].constructor === Array) ? varPaths[varPath][0] : varPaths[varPath];
-		logger ("\t", paint.path(varPath), '=', value);
-		varPaths[varPath] = value || "<#undefined>";
-	}
-	var messageChunks = [
-		this.fixupFile? "" : "you must define fixup path, then",
-		"you can run",
-		"\n" + paint.confFu ("TODO: <variable> <value>"),
-		"\nto define individual variables or edit",
-		this.fixupFile ? paint.path (this.fixupFile.path) : "fixup file",
-		"to define all those vars at once"
-	];
-	
-	logger.apply (console, messageChunks);
-	
-	// console.log (this.logUnpopulated.list);
-};
-
-
-ConfFu.prototype.applyFixup = function () {
+ConfFuIO.prototype.applyFixup = function () {
 	if (this.checkList.coreLoaded === null || this.checkList.fixupLoaded === null) {
 		return;
 	}
-	// all files is loaded or failed
-	if (this.configFixup) {
-		common.extend (true, this.config, this.configFixup);
-	}
-	this.interpolateVars ();
+	
+	this.super_.prototype.applyFixup.call (this);
 
 };
 
-ConfFu.prototype.interpolateAlien = function (alienFileTmpl, alienFile, cb) {
+ConfFuIO.prototype.interpolateAlien = function (alienFileTmpl, alienFile, cb) {
 	if (!(alienFileTmpl instanceof io)) {
 		alienFileTmpl = new io (alienFileTmpl);
 	}
-		
+	
 	var self = this;
 	
 	alienFileTmpl.readFile (function (err, data) {
@@ -241,7 +214,7 @@ ConfFu.prototype.interpolateAlien = function (alienFileTmpl, alienFile, cb) {
 		var toInterpolate = value.replace (variableReg, "<$$$7>");
 		var interpolated, error;
 		try {
-			interpolated = common.interpolate (toInterpolate, self.config, marks, true);
+			interpolated = ConfFuIO.interpolate (toInterpolate, self.config, marks, true);
 		} catch (e) {
 			error = e;
 			self.emit ('error', 'alien', 'variables', e);
@@ -334,39 +307,18 @@ ConfFu.prototype.readInstance = function () {
 	});
 };
 
-ConfFu.prototype.setVariables = function (fixupVars, force) {
+ConfFuIO.prototype.setVariables = function (fixupVars, force) {
 	var self = this;
 	// ensure fixup is defined
 	// TODO: migration from instance-based
 
-	if (!this.configFixup) {
-		this.configFixup = {};
-	}
-
-	// apply patch to fixup config
-	Object.keys (fixupVars).forEach (function (varPath) {
-		var pathChunks = [];
-		var root = self.configFixup;
-		varPath.split ('.').forEach (function (chunk, index, chunks) {
-			pathChunks[index] = chunk;
-			var newRoot = root[chunk];
-			if (index === chunks.length - 1) {
-				if (force || !(chunk in root)) {
-					root[chunk] = (fixupVars[varPath] && fixupVars[varPath].constructor === Array) ? fixupVars[varPath][0] : fixupVars[varPath] || "<#undefined>";
-				}
-			} else if (!newRoot) {
-				root[chunk] = {};
-				newRoot = root[chunk];
-			}
-			root = newRoot;
-		});
-	});
+	self.super_.prototype.setVariables.apply (self, arguments);
 
 	if (this.fixupFile) {
 		// wrote config to the fixup file
 		var validFixupString;
 		if (this.fixupFile.stringify)
-			validFixupString = this.fixupFile.stringify (this.configFixup);
+			validFixupString = this.fixupFile.stringify (this.fixup);
 		
 		if (validFixupString)
 			this.fixupFile.writeFile (
@@ -419,95 +371,9 @@ ConfFu.prototype.parseConfig = function (configData, configFile, type) {
 	return result;
 };
 
-ConfFu.prototype.interpolateVars = function (error) {
-	// var variables = {};
-	var self = this;
-
-	function iterateNode (node, key, depth) {
-		var value = node[key];
-		var fullKey = depth.join ('.');
-		var match;
-
-		if (self.variables[fullKey]) {
-			self.variables[fullKey][1] = value;
-		}
-
-		if ('string' !== typeof value) {
-			return;
-		}
-
-		var enchanted = self.isEnchantedValue (value);
-		if (!enchanted) {
-			// WTF???
-			if (self.variables[fullKey]) {
-				self.variables[fullKey][1] = value.toString ? value.toString() : value;
-			}
-
-			return;
-		}
-		if ("placeholder" in enchanted) {
-			// this is a placeholder, not filled in fixup
-			self.variables[fullKey] = [value];
-			if (enchanted.optional) {
-				self.variables[fullKey][1] = null;
-				node[key] = null;
-			} else if (enchanted.default) {
-				self.variables[fullKey][1] = enchanted.default;
-				node[key] = enchanted.default;
-			}
-			return;
-		}
-		if ("variable" in enchanted) {
-			// this is a variable, we must fill it now
-			// current match is a variable path
-			// we must write both variable path and a key,
-			// containing it to the fixup
-
-			var interpolated = enchanted.interpolated (self.config);
-//			console.log ('%%%%%%%%%%%%%%%%%%%%%%%', enchanted, interpolated);
-			if (interpolated === undefined) {
-				// erroneous fields is in enchanted.failure
-				self.variables[fullKey] = [value];
-			} else {
-				node[key] = interpolated;
-				self.variables[fullKey] = [value, node[key]];
-			}
-			return;
-		}
-		// this cannot happens, but i can use those checks for assertions
-		if ("error" in enchanted || "include" in enchanted) {
-			// throw ("this value must be populated: \"" + value + "\"");
-		}
-	}
-
-	self.iterateTree (self.config, iterateNode, []);
-
-	var unpopulatedVars = {};
-
-	var varNames = Object.keys (self.variables);
-	varNames.forEach (function (varName) {
-		if (self.variables[varName][1] !== undefined) {
-
-		} else {
-			unpopulatedVars[varName] = self.variables[varName];
-		}
-	});
-
-	this.setVariables (self.variables);
-
-	if (Object.keys(unpopulatedVars).length) {
-		self.emit ('error', 'config', 'variables', unpopulatedVars);
-		return;
-	}
-
-	self.emit ('ready');
-
-
-};
 
 ConfFu.prototype.onFixupRead = function (err, data, parsed) {
 	
-	var configFixup = {};
 	if (err) {
 		this.emit ('error', 'fixup', 'file', err, this.fixupFile.path);
 		return;
@@ -519,7 +385,7 @@ ConfFu.prototype.onFixupRead = function (err, data, parsed) {
 		return;
 	}
 
-	this.configFixup = parsed.object;
+	this.fixup = parsed.object;
 
 	this.emit ('fixupLoaded');
 };
@@ -564,104 +430,35 @@ ConfFu.prototype.onConfigRead = function (err, data, parsed) {
 
 var configCache = {};
 
-ConfFu.prototype.iterateTree = function iterateTree (tree, cb, depth) {
-	if (null == tree) {
-		return;
+ConfFu.prototype.logUnpopulated = function(varPaths) {
+	var logger = console.error.bind (console);
+
+	if (!this.verbose) {
+		logger = function () {};
 	}
 
-	var level = depth.length;
-
-	var step = function (node, key, tree) {
-		depth[level] = key;
-		cb (tree, key, depth);
-		iterateTree (node, cb, depth.slice (0));
-	};
-
-	if (Array === tree.constructor) {
-		tree.forEach (step);
-	} else if (Object === tree.constructor) {
-		Object.keys(tree).forEach(function (key) {
-			step (tree[key], key, tree);
-		});
+	logger (paint.error ("those config variables is unpopulated:"));
+	for (var varPath in varPaths) {
+		var value = (varPaths[varPath] && varPaths[varPath].constructor === Array) ? varPaths[varPath][0] : varPaths[varPath];
+		logger ("\t", paint.path(varPath), '=', value);
+		varPaths[varPath] = value || "<#undefined>";
 	}
-};
+	var messageChunks = [
+		this.fixupFile? "" : "you must define fixup path, then",
+		"you can run",
+		"\n" + paint.confFu ("TODO: <variable> <value>"),
+		"\nto define individual variables or edit",
+		this.fixupFile ? paint.path (this.fixupFile.path) : "fixup file",
+		"to define all those vars at once"
+	];
 
-ConfFu.prototype.getKeyDesc = function (key) {
-	var result = {};
-	var value = common.getByPath (key, this.config);
-	result.value = value.value;
-	result.enchanted = this.isEnchantedValue (result.value);
-	// if value is enchanted, then it definitely a string
-	if (result.enchanted && "variable" in result.enchanted) {
-		return result;
-	}
-	return result;
+	logger.apply (console, messageChunks);
+
+	// console.log (this.logUnpopulated.list);
 };
 
 
-ConfFu.prototype.getValue = function (key) {
-	var value = common.getByPath (key, this.config).value;
-	if (value === undefined) {
-		return;
-	}
-	var enchanted = this.isEnchantedValue (value);
-	// if value is enchanted, then it definitely a string
-	if (enchanted && "variable" in enchanted) {
-		var result = new String (value.interpolate());
-		result.rawValue = value;
-		return result;
-	}
-	return value;
-};
-
-ConfFu.prototype.isEnchantedValue = function (value) {
-
-	var tagRe = /<(([\$\#]*)((optional|default):)*([^>]+))>/;
-	var variableRe    = /<((\$)((int|quoted|bool)(\(([^\)]*)\))?:)?([^>=]+)(=([^>]*))?)>/i;
-	var variableReg   = /<((\$)((int|quoted|bool)(\(([^\)]*)\))?:)?([^>=]+)(=([^>]*))?)>/ig;
-	var placeholderRe = /^<((\#)((optional|default):)?([^>]+))>$/i;
-	var includeRe     = /^<<([^<>]+)>>$/i;
-
-	var result;
-
-	if ('string' !== typeof value) {
-		return;
-	}
-	
-	var self = this;
-	
-	var check;
-	if (check = value.match (variableRe)) {
-		var marks = {start: '<', end: '>', typeRaw: '$', typeSafe: '🐸'};
-		var result = {
-			variable: check[7],
-			type:     check[4],
-			typeArgs: check[6],
-			defaults: check[9],
-			interpolated: function (dictionary) {
-				var toInterpolate = value.replace (variableReg, "<$$$7>");
-				try {
-					return common.interpolate (toInterpolate, dictionary, marks, true);
-				} catch (e) {
-					result.failure = e;
-					return undefined;
-				};
-			}
-		};
-		return result;
-	} else if (check = value.match (placeholderRe)) {
-		result = {"placeholder": check[5]};
-			if (check[4]) {
-				result[check[4]] = check[5];
-			}
-			return result;
-	} else if (check = value.match (includeRe)) {
-		return {"include": check[1]};
-	}
-};
-
-
-ConfFu.prototype.loadIncludes = function (config, level, basePath, cb) {
+ConfFuIO.prototype.loadIncludes = function (config, level, basePath, cb) {
 	var self = this;
 
 	var DEFAULT_ROOT = this.configDir,
@@ -730,7 +527,7 @@ ConfFu.prototype.loadIncludes = function (config, level, basePath, cb) {
 
 			if (configCache[incPath]) {
 
-				node[key] = util.clone(configCache[incPath]);
+				node[key] = ConfFu.clone (configCache[incPath]);
 				onLoad();
 				return;
 
@@ -756,7 +553,7 @@ ConfFu.prototype.loadIncludes = function (config, level, basePath, cb) {
 					function(tree, includeConfig) {
 						configCache[incPath] = includeConfig;
 
-						node[key] = util.clone(configCache[incPath]);
+						node[key] = ConfFu.clone(configCache[incPath]);
 						onLoad();
 					}
 				);	
@@ -772,7 +569,7 @@ ConfFu.prototype.loadIncludes = function (config, level, basePath, cb) {
 	!len && cb(null, config, variables, placeholders);
 };
 
-ConfFu.prototype.getFilePath = function (baseDir, pathTemplate) {
+ConfFuIO.prototype.getFilePath = function (baseDir, pathTemplate) {
 	
 	// here you can use some options to define include location:
 	// 1. relative path (with . or ..)

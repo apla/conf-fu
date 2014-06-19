@@ -40,6 +40,7 @@ describe ("interpolate vars in external file", function () {
 			);
 		});
 		config.on ('error', function (eOrigin, eType, eData, eFile) {
+			console.log (arguments);
 			assert (false, 'wrong config');
 		});
 	});

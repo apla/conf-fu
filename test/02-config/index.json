@@ -1,5 +1,10 @@
 {
-	"xxx": "yyy",
-	"zzz": "<#aaa>",
+	"xxx": {
+		"yyy": {
+			"zzz": "<#aaa>"
+		}
+	},
+	"zzz": "<#bbb>",
+	"aaa": "<$xxx.yyy.zzz>",
 	"bbb": "<$zzz>"
 }

@@ -1,5 +1,10 @@
 {
 	"zzz": false,
+	"xxx": {
+		"yyy": {
+			"zzz": "zzz"
+		}
+	},
 	"database": {
 		"include": {
 			"root": {
@@ -17,7 +22,15 @@
 			"root4": {
 				"zzz": {},
 				"bbb": "<$zzz>"
-			}
+			},
+			"zzz": "aaa",
+			"bbb": "<$zzz>",
+			"xxx": {
+				"yyy": {
+					"zzz": "zzz"
+				}
+			},
+			"aaa": "<$xxx.yyy.zzz>"
 		}
 	}
 }
