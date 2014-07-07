@@ -74,14 +74,31 @@ function ConfFuIO (options) {
 		fixupLoaded:    null,
 	};
 
+	var self = this;
+	
 	this.on ('configLoaded', function () {
-		this.checkList.coreLoaded = true;
-		this.applyFixup ();
+		self.checkList.coreLoaded = true;
+		self.applyFixup ();
 	});
 
 	this.on ('fixupLoaded', function () {
-		this.checkList.fixupLoaded = true;
-		this.applyFixup ();
+		self.checkList.fixupLoaded = true;
+		self.applyFixup ();
+	});
+	
+	var ioWait;
+	
+	Object.defineProperty(this, 'ioWait', {
+		get: function () {
+			return ioWait;
+		},
+		set: function (value) {
+			ioWait = value;
+			if (ioWait === 0 && self.onIOFinish) {
+				self.onIOFinish ();
+				delete self.onIOFinish;
+			}
+		}
 	});
 
 	this.on ('error', this.errorHandler.bind (this));
@@ -189,7 +206,11 @@ ConfFuIO.prototype.applyFixup = function () {
 	}
 	
 	if (this.super_.prototype.applyFixup.call (this)) {
-		this.emit ('ready');
+		if (this.ioWait > 0) {
+			this.onIOFinish = this.emit.bind (this, 'ready');
+		} else {
+			this.emit ('ready');
+		}
 		// TODO: wait for all file operations to complete
 		this.ready = true;
 	} else {
@@ -247,7 +268,7 @@ ConfFuIO.prototype.interpolateAlien = function (alienFileTmpl, alienFile, cb) {
 	});
 }
 
-ConfFu.prototype.onInstanceRead = function (err, data) {
+ConfFuIO.prototype.onInstanceRead = function (err, data) {
 	if (err) {
 		this.emit ('error', 'instance', 'file', err, this.instanceFile.path);
 		return;
@@ -265,7 +286,7 @@ ConfFu.prototype.onInstanceRead = function (err, data) {
 	}
 }
 
-ConfFu.prototype.readInstance = function () {
+ConfFuIO.prototype.readInstance = function () {
 	var self = this;
 	this.instance = process.env.PROJECT_INSTANCE;
 	if (this.instance) {
@@ -325,10 +346,13 @@ ConfFuIO.prototype.setVariables = function (fixupVars, force) {
 		if (this.fixupFile.stringify)
 			validFixupString = this.fixupFile.stringify (this.fixup);
 		
-		if (validFixupString)
-			this.fixupFile.writeFile (
-				validFixupString
-			);
+		if (validFixupString) {
+			self.ioWait ++;
+			this.fixupFile.writeFile (validFixupString, function () {
+				// TODO: error handling for fixup write
+				self.ioWait --;
+			});
+		}
 	} else {
 		console.error (paint.confFu(), 'fixup file name is undefined, cannot write to the fixup file');
 		if (Object.keys (fixupVars).length) {
@@ -339,45 +363,7 @@ ConfFuIO.prototype.setVariables = function (fixupVars, force) {
 
 };
 
-ConfFu.prototype.parseConfig = function (configData, configFile, type) {
-	var self = this;
-	var result;
-	
-	var configFileExt = path.extname(configFile.path || configFile).substr (1);
-	if (configFileExt in this.formats) {
-		var format = this.formats[configFileExt];
-		var match = configData.toString().match (format.check);
-		if (match) {
-			if (configFile && configFile.path) {
-				configFile.parse     = format.parse;
-				configFile.stringify = format.stringify;
-			}
-			
-		} else {
-			console.log (paint.confFu(), 'file extension and format check doesn\'t match:');
-			console.log ('file ext:    ', configFileExt);
-			console.log ('file name:   ', (configFile.path || configFile));
-			console.log ('contents:    ', configData.toString().substr (0, 100), '...');
-			console.log ('format check:', format.check);
-			result = {
-				error: "parser by extension cannot parse config file contents (format.check doesn't match')"
-			};
-		}
-	} else {
-	}
-	
-	if (!result) {
-		self.emit ('error', type, 'parse', null, (configFile.path || configFile));
-		return {};
-	}
-	if (result.error) {
-		self.emit ('error', type, 'parse', result.error, (configFile.path || configFile));
-	}
-	return result;
-};
-
-
-ConfFu.prototype.onFixupRead = function (err, data, parsed) {
+ConfFuIO.prototype.onFixupRead = function (err, data, parsed) {
 	
 	if (err) {
 		this.emit ('error', 'fixup', 'file', err, this.fixupFile.path);
@@ -395,7 +381,7 @@ ConfFu.prototype.onFixupRead = function (err, data, parsed) {
 	this.emit ('fixupLoaded');
 };
 
-ConfFu.prototype.onConfigRead = function (err, data, parsed) {
+ConfFuIO.prototype.onConfigRead = function (err, data, parsed) {
 
 	if (err) {
 		var message = "Can't access '" + this.configFile.path + "' file ("+err.code+")";
@@ -435,7 +421,7 @@ ConfFu.prototype.onConfigRead = function (err, data, parsed) {
 
 var configCache = {};
 
-ConfFu.prototype.logUnpopulated = function(varPaths) {
+ConfFuIO.prototype.logUnpopulated = function(varPaths) {
 	var logger = console.error.bind (console);
 
 	if (!this.verbose) {
@@ -532,7 +518,7 @@ ConfFuIO.prototype.loadIncludes = function (config, level, basePath, cb) {
 
 			if (configCache[incPath]) {
 
-				node[key] = ConfFu.clone (configCache[incPath]);
+				node[key] = ConfFuIO.clone (configCache[incPath]);
 				onLoad();
 				return;
 
@@ -558,7 +544,7 @@ ConfFuIO.prototype.loadIncludes = function (config, level, basePath, cb) {
 					function(tree, includeConfig) {
 						configCache[incPath] = includeConfig;
 
-						node[key] = ConfFu.clone(configCache[incPath]);
+						node[key] = ConfFuIO.clone(configCache[incPath]);
 						onLoad();
 					}
 				);	
