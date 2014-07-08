@@ -367,13 +367,13 @@ ConfFuIO.prototype.setVariables = function (fixupVars, force) {
 ConfFuIO.prototype.onFixupRead = function (err, data, parsed) {
 
 	if (err) {
-		this.emit ('error', 'fixup', 'file', err, this.fixupFile.path);
+		this.emit ('error', 'fixup', 'file', err, this.fixupFile);
 		return;
 	}
 
 	if (!parsed || parsed.error) {
 		if (!parsed) console.log (arguments);
-		this.emit ('error', 'fixup', 'parse', parsed.error, this.fixupFile.path); // type error when parsed not defined
+		this.emit ('error', 'fixup', 'parse', (parsed ? parsed.error : null), this.fixupFile); // type error when parsed not defined
 		return;
 	}
 
@@ -387,13 +387,13 @@ ConfFuIO.prototype.onConfigRead = function (err, data, parsed) {
 	if (err) {
 		var message = "Can't access '" + this.configFile.path + "' file ("+err.code+")";
 		console.error (paint.confFu(), paint.error (message));
-		this.emit ('error', 'core', 'file', err);
+		this.emit ('error', 'core', 'file', err, this.configFile);
 		return;
 	}
 	if (!parsed || parsed.error) {
 		var message = "Cannot parse '" + this.configFile.path + "' file";
 		console.error (paint.confFu(), paint.error (message));
-		this.emit ('error', 'core', 'parse', err);
+		this.emit ('error', 'core', 'parse', (parsed ? parsed.error : null), this.configFile);
 		return;
 	}
 
@@ -529,12 +529,12 @@ ConfFuIO.prototype.loadIncludes = function (config, level, basePath, cb) {
 
 			incPathIO.readAndParseFile (function (err, data, parsed) {
 				if (err) {
-					self.emit ('error', 'include', 'file', null, (basePath.path || basePath));
+					self.emit ('error', 'include', 'file', null, basePath);
 					return;
 				}
 
 				if (!parsed || parsed.error) {
-					this.emit ('error', 'include', 'parse', parsed.error, (basePath.path || basePath)); // TODO: type error when parsed not defined
+					this.emit ('error', 'include', 'parse', (parsed ? parsed.error : null), basePath); // TODO: type error when parsed not defined
 					return;
 				}
 

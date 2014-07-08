@@ -28,6 +28,7 @@ io.prototype.appendFormat = function () {
 		var format = formats[this.extension];
 		this.parseBuffer    = format.parse;
 		this.stringify      = format.stringify;
+		this.detectedFormat = format.type;
 		return true;
 	}
 }
