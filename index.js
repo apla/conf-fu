@@ -25,19 +25,19 @@ var ConfFu = require ('./base');
  * @param {type} fixupFile fixup conf-fu file
  * @param {type} instance project's current instance to detect fixup
  * @param {type} instanceFile file to read project instance
- 
- examples: 
- 
+
+ examples:
+
  load config file, expand all includes, patch config with includes using config fixup
  confFu (configFile, fixupFile);
- 
+
  */
 
-// 
+//
 function inheritsMixin (sub, sup) {
 	sub.prototype = Object.create (sup.prototype);
 	var sprot = sub.prototype;
-	
+
 	sprot.super_  = sup;
 	sprot.super_.init = sup.bind (sub);
 
@@ -46,14 +46,14 @@ function inheritsMixin (sub, sup) {
 			sub[key] = sup[key];
 		}
 	}
-	
+
 	var mixins = [].slice.call (arguments, 2);
 	mixins.forEach (function (mixin) {
 		Object.keys (mixin.prototype).forEach (function(key) {
 			sprot[key] = mixin.prototype[key];
 		});
 	});
-	
+
 	sprot.mixins_ = mixins;
 	sprot.mixins_.init = function () {
 		mixins.forEach (function (mixin) {
@@ -65,7 +65,7 @@ function inheritsMixin (sub, sup) {
 function ConfFuIO (options) {
 //	this.super_.init  (); // we must init super after all needed files is loaded
 	this.mixins_.init ();
-	
+
 	this.alienExt = 'conf-fu';
 
 	this.checkList = {
@@ -75,7 +75,7 @@ function ConfFuIO (options) {
 	};
 
 	var self = this;
-	
+
 	this.on ('configLoaded', function () {
 		self.checkList.coreLoaded = true;
 		self.applyFixup ();
@@ -85,9 +85,9 @@ function ConfFuIO (options) {
 		self.checkList.fixupLoaded = true;
 		self.applyFixup ();
 	});
-	
+
 	var ioWait;
-	
+
 	Object.defineProperty(this, 'ioWait', {
 		get: function () {
 			return ioWait;
@@ -104,7 +104,7 @@ function ConfFuIO (options) {
 	this.on ('error', this.errorHandler.bind (this));
 
 	this.configFile   = new io (options.configFile);
-	
+
 	if (options.configRoot) {
 		this.configRoot = new io (options.configRoot);
 	} else {
@@ -159,27 +159,28 @@ ConfFuIO.prototype.loadAll = function () {
 		this.fixupFile.readAndParseFile (this.onFixupRead.bind (this));
 	if (this.instanceFile)
 		this.instanceFile.readFile (this.onInstanceRead.bind (this));
-	
+
 };
 
 ConfFuIO.prototype.errorHandler = function (eOrigin, eType, eData, eFile) {
 	// origin can be config, fixup or include
 	// type can be file, parser, variables
-	
+
 	var logger = console.error.bind (console);
-	
+
 	if (!this.verbose) {
 		logger = function () {};
 	}
 
 	if (eType === 'parse') {
+//		console.log ('!!!!!!!!!!!!!!!!!!!!!!!!', eFile, this);
 		var message = 'Config ' + eOrigin + ' (' + paint.path (eFile.path || eFile) + ') cannot be parsed:';
 		if (eData === null) {
 			logger (message, paint.error ('unknown format'));
 			logger (
 				'You can add new formats using ConfFu.prototype.formats.',
 				'Currently supported formats:',
-				this.formats.map (function (fmt) {return paint.path(fmt.type);}).join (', ')
+				Object.keys (ConfFu.prototype.formats).join (', ')
 			);
 		} else {
 			logger (message, paint.error (eData));
@@ -188,7 +189,7 @@ ConfFuIO.prototype.errorHandler = function (eOrigin, eType, eData, eFile) {
 		this.checkList[eOrigin+'Loaded'] = false;
 		logger ("Config", eOrigin, "file error:", paint.error (eData));
 		if (eOrigin === 'fixup') {
-			
+
 		} else {
 			// TODO: maybe process.kill?
 		}
@@ -196,7 +197,7 @@ ConfFuIO.prototype.errorHandler = function (eOrigin, eType, eData, eFile) {
 	} else if (eType === 'variables') {
 		this.logUnpopulated (eData);
 	}
-	
+
 
 };
 
@@ -204,7 +205,7 @@ ConfFuIO.prototype.applyFixup = function () {
 	if (this.checkList.coreLoaded === null || this.checkList.fixupLoaded === null) {
 		return;
 	}
-	
+
 	if (this.super_.prototype.applyFixup.call (this)) {
 		if (this.ioWait > 0) {
 			this.onIOFinish = this.emit.bind (this, 'ready');
@@ -222,18 +223,18 @@ ConfFuIO.prototype.interpolateAlien = function (alienFileTmpl, alienFile, cb) {
 	if (!(alienFileTmpl instanceof io)) {
 		alienFileTmpl = new io (alienFileTmpl);
 	}
-	
+
 	var self = this;
-	
+
 	alienFileTmpl.readFile (function (err, data) {
 		if (err) {
 			self.emit ('error', 'alien', 'file', err, alienFileTmpl.path);
 			return;
 		}
-		
+
 		// TODO: stream parser
 		var value = data.toString();
-		
+
 		// TODO: remove copy-paste
 		var variableReg   = /<((\$)((int|quoted|bool)(\(([^\)]*)\))?:)?([^>=]+)(=([^>]*))?)>/gi;
 		var marks = {start: '<', end: '>', typeRaw: '$', typeSafe: '🐸'};
@@ -259,12 +260,12 @@ ConfFuIO.prototype.interpolateAlien = function (alienFileTmpl, alienFile, cb) {
 		} else if (!(alienFile instanceof io)) { // assumed string path
 			alienFile = new io (alienFile);
 		}
-		
+
 		alienFile.writeFile (interpolated, function (err) {
 			cb && cb (err, interpolated, alienFile);
 		});
-		
-		
+
+
 	});
 }
 
@@ -273,13 +274,13 @@ ConfFuIO.prototype.onInstanceRead = function (err, data) {
 		this.emit ('error', 'instance', 'file', err, this.instanceFile.path);
 		return;
 	}
-	
+
 	this.instance = data.toString().trim();
-	
+
 	var fixupFile = this.fixupEnchantment.interpolated ({
 		instance: this.instance
 	});
-	
+
 	if (fixupFile) {
 		this.fixupFile = new io (fixupFile);
 		this.fixupFile.readAndParseFile (this.onFixupRead.bind (this));
@@ -345,7 +346,7 @@ ConfFuIO.prototype.setVariables = function (fixupVars, force) {
 		var validFixupString;
 		if (this.fixupFile.stringify)
 			validFixupString = this.fixupFile.stringify (this.fixup);
-		
+
 		if (validFixupString) {
 			self.ioWait ++;
 			this.fixupFile.writeFile (validFixupString, function () {
@@ -356,7 +357,7 @@ ConfFuIO.prototype.setVariables = function (fixupVars, force) {
 	} else {
 		console.error (paint.confFu(), 'fixup file name is undefined, cannot write to the fixup file');
 		if (Object.keys (fixupVars).length) {
-			
+
 //			process.kill ();
 		}
 	}
@@ -364,12 +365,12 @@ ConfFuIO.prototype.setVariables = function (fixupVars, force) {
 };
 
 ConfFuIO.prototype.onFixupRead = function (err, data, parsed) {
-	
+
 	if (err) {
 		this.emit ('error', 'fixup', 'file', err, this.fixupFile.path);
 		return;
 	}
-	
+
 	if (!parsed || parsed.error) {
 		if (!parsed) console.log (arguments);
 		this.emit ('error', 'fixup', 'parse', parsed.error, this.fixupFile.path); // type error when parsed not defined
@@ -397,7 +398,7 @@ ConfFuIO.prototype.onConfigRead = function (err, data, parsed) {
 	}
 
 	var config = parsed.object;
-	
+
 	this.id = config.id;
 
 	var self = this;
@@ -523,23 +524,23 @@ ConfFuIO.prototype.loadIncludes = function (config, level, basePath, cb) {
 				return;
 
 			}
-			
+
 			var incPathIO = new io (incPath);
-			
+
 			incPathIO.readAndParseFile (function (err, data, parsed) {
 				if (err) {
 					self.emit ('error', 'include', 'file', null, (basePath.path || basePath));
 					return;
 				}
-				
+
 				if (!parsed || parsed.error) {
 					this.emit ('error', 'include', 'parse', parsed.error, (basePath.path || basePath)); // TODO: type error when parsed not defined
 					return;
 				}
 
 				self.loadIncludes(
-					parsed.object, 
-					path.join(level, DELIMITER, incPath), 
+					parsed.object,
+					path.join(level, DELIMITER, incPath),
 					incPath,
 					function(tree, includeConfig) {
 						configCache[incPath] = includeConfig;
@@ -547,7 +548,7 @@ ConfFuIO.prototype.loadIncludes = function (config, level, basePath, cb) {
 						node[key] = ConfFuIO.clone(configCache[incPath]);
 						onLoad();
 					}
-				);	
+				);
 			});
 
 		}
@@ -561,7 +562,7 @@ ConfFuIO.prototype.loadIncludes = function (config, level, basePath, cb) {
 };
 
 ConfFuIO.prototype.getFilePath = function (baseDir, pathTemplate) {
-	
+
 	// here you can use some options to define include location:
 	// 1. relative path (with . or ..)
 	if (pathTemplate.match (/\.+(\/|\\)/)) {
@@ -585,5 +586,5 @@ ConfFuIO.prototype.getFilePath = function (baseDir, pathTemplate) {
 	}
 
 	return pathTemplate;
-	
+
 };
