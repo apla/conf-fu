@@ -195,6 +195,40 @@ describe ("loading config", function () {
 		});
 	});
 
+	var ymlTest = it.skip;
+	try {
+		var yml = require ('js-yaml');
+		ymlTest = it;
+	} catch (e) {
+
+	}
+
+
+	ymlTest ("yml with json includes and yml fixup should return config", function (done) {
+		var config = new confFu ({
+			configFile: path.join (configDir, 'index.yml'),
+			fixupFile:  path.join (configDir, 'fixup.yml')
+		});
+
+		config.verbose = globalVerbose || false;
+
+		config.on ('error', function () {
+			console.log (arguments);
+		});
+
+		config.on ('ready', function () {
+
+			//			console.log (JSON.stringify (config.config));
+			// WHY???
+			// assert ("zzz" in config.config.database.include.root, "has 'zzz' in 'root'");
+
+			//			console.trace ();
+
+			done ();
+		});
+	});
+
+
 	it.skip ('with falsy variables', function (done) {});
 
 	it ('with optional placeholders and defaults', function (done) {
