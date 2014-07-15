@@ -377,6 +377,8 @@ ConfFuIO.prototype.onFixupRead = function (err, data, parsed) {
 		return;
 	}
 
+	console.log (paint.confFu(), 'fixup loaded from', paint.path (this.fixupFile.shortPath ()));
+
 	this.fixup = parsed.object;
 
 	this.emit ('fixupLoaded');
@@ -385,17 +387,19 @@ ConfFuIO.prototype.onFixupRead = function (err, data, parsed) {
 ConfFuIO.prototype.onConfigRead = function (err, data, parsed) {
 
 	if (err) {
-		var message = "Can't access '" + this.configFile.path + "' file ("+err.code+")";
+		var message = "can't access '" + this.configFile.path + "' file ("+err.code+")";
 		console.error (paint.confFu(), paint.error (message));
 		this.emit ('error', 'core', 'file', err, this.configFile);
 		return;
 	}
 	if (!parsed || parsed.error) {
-		var message = "Cannot parse '" + this.configFile.path + "' file";
+		var message = "cannot parse '" + this.configFile.path + "' file";
 		console.error (paint.confFu(), paint.error (message));
 		this.emit ('error', 'core', 'parse', (parsed ? parsed.error : null), this.configFile);
 		return;
 	}
+
+	console.log (paint.confFu(), 'config loaded from', paint.path (this.configFile.shortPath ()));
 
 	var config = parsed.object;
 
