@@ -429,6 +429,16 @@ ConfFuIO.prototype.onConfigRead = function (err, data, parsed) {
 
 var configCache = {};
 
+ConfFuIO.prototype.logVariables = function() {
+	console.log (paint.confFu (), 'variables:');
+	for (var varPath in this.variables) {
+		var value = (this.variables[varPath] && this.variables[varPath].constructor === Array) ? this.variables[varPath][1] : this.variables[varPath];
+		console.log ("\t", paint.path(varPath), '=', value);
+//		this.variables[varPath] = value || "<#undefined>";
+	}
+};
+
+
 ConfFuIO.prototype.logUnpopulated = function(varPaths) {
 	var logger = console.error.bind (console);
 
