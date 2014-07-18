@@ -380,7 +380,7 @@ ConfFuIO.prototype.onFixupRead = function (err, data, parsed) {
 		return;
 	}
 
-	console.log (paint.confFu(), 'fixup loaded from', paint.path (this.fixupFile.shortPath ()));
+	this.emit ('read', 'fixup', this.fixupFile);
 
 	this.fixup = parsed.object;
 
@@ -390,19 +390,19 @@ ConfFuIO.prototype.onFixupRead = function (err, data, parsed) {
 ConfFuIO.prototype.onConfigRead = function (err, data, parsed) {
 
 	if (err) {
-		var message = "can't access '" + this.configFile.path + "' file ("+err.code+")";
+		var message = "can't access '" + this.configFile.shortPath() + "' file ("+err.code+")";
 		console.error (paint.confFu(), paint.error (message));
 		this.emit ('error', 'core', 'file', err, this.configFile);
 		return;
 	}
 	if (!parsed || parsed.error) {
-		var message = "cannot parse '" + this.configFile.path + "' file";
+		var message = "cannot parse '" + this.configFile.shortPath() + "' file";
 		console.error (paint.confFu(), paint.error (message));
 		this.emit ('error', 'core', 'parse', (parsed ? parsed.error : null), this.configFile);
 		return;
 	}
 
-	console.log (paint.confFu(), 'config loaded from', paint.path (this.configFile.shortPath ()));
+	this.emit ('read', 'config', this.configFile);
 
 	var config = parsed.object;
 
@@ -447,7 +447,7 @@ ConfFuIO.prototype.logUnpopulated = function(varPaths) {
 		"you can run",
 		"\n" + paint.confFu ("TODO: <variable> <value>"),
 		"\nto define individual variables or edit",
-		this.fixupFile ? paint.path (this.fixupFile.path) : "fixup file",
+		this.fixupFile ? paint.path (this.fixupFile.shortPath ()) : "fixup file",
 		"to define all those vars at once"
 	];
 
