@@ -86,7 +86,7 @@ function ConfFuIO (options) {
 		self.applyFixup ();
 	});
 
-	var ioWait;
+	var ioWait = 0;
 
 	Object.defineProperty(this, 'ioWait', {
 		get: function () {
@@ -100,6 +100,9 @@ function ConfFuIO (options) {
 			}
 		}
 	});
+
+	this.on ('ready', function () {self.ready = true;});
+	this.on ('notReady', function () {self.ready = false;});
 
 	this.on ('error', this.errorHandler.bind (this));
 
@@ -206,15 +209,15 @@ ConfFuIO.prototype.applyFixup = function () {
 		return;
 	}
 
-	if (this.super_.prototype.applyFixup.call (this)) {
-		if (this.ioWait > 0) {
-			this.onIOFinish = this.emit.bind (this, 'ready');
-		} else {
-			this.emit ('ready');
-		}
-		// TODO: wait for all file operations to complete
-		this.ready = true;
+	var isReady = this.super_.prototype.applyFixup.call (this);
+	var readyEventName = isReady ? 'ready' : 'notReady';
+	if (this.ioWait > 0) {
+		this.onIOFinish = this.emit.bind (this, readyEventName);
 	} else {
+		this.emit (readyEventName);
+	}
+
+	if (!isReady) {
 		this.emit ('error', 'config', 'variables', this.unpopulatedVariables ());
 	}
 };
