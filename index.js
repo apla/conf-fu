@@ -373,6 +373,9 @@ ConfFuIO.prototype.onFixupRead = function (err, data, parsed) {
 
 	if (err) {
 		this.emit ('error', 'fixup', 'file', err, this.fixupFile);
+		this.checkList.fixupLoaded = false;
+		this.fixup = {};
+		this.applyFixup ();
 		return;
 	}
 
