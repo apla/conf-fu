@@ -9,6 +9,8 @@ var ConfFu = function (options) {
 	this.variables    = {};
 	this.placeholders = {};
 
+	this.setupVariables = options.setupVariables || {};
+
 	this.ready = this.applyFixup ();
 };
 
@@ -218,6 +220,7 @@ var interpolate = ConfFu.interpolate = function (str, dict, marks, mustThrow) {
 ConfFu.prototype.applyFixup = function () {
 	// all files is loaded or failed
 	if (this.fixup) {
+		// TODO: find orphan variables from fixup
 		extend (this.config, this.fixup);
 	}
 
@@ -289,7 +292,9 @@ ConfFu.prototype.interpolateVars = function (error) {
 
 	var unpopulatedVars = this.unpopulatedVariables ();
 
-	this.setVariables (self.variables);
+	var allVars = extend ({}, this.setupVariables, this.variables);
+
+	this.setVariables (allVars);
 
 	if (Object.keys(unpopulatedVars).length) {
 		return;
@@ -303,7 +308,7 @@ ConfFu.prototype.unpopulatedVariables = function (fixupVars, force) {
 	var varNames = Object.keys (this.variables);
 	var self = this;
 	varNames.forEach (function (varName) {
-		if (self.variables[varName][1] === undefined) {
+		if (self.variables[varName][1] === undefined && !(varName in self.setupVariables)) {
 			unpopulatedVars[varName] = self.variables[varName];
 		}
 	});

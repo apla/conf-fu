@@ -114,6 +114,8 @@ function ConfFuIO (options) {
 		this.configRoot = this.configFile.parent();
 	}
 
+	this.setupVariables = options.setupVariables || {};
+
 	this.instance     = options.instance;
 	if (options.instanceFile)
 		this.instanceFile = new io (options.instanceFile);
@@ -431,8 +433,19 @@ var configCache = {};
 
 ConfFuIO.prototype.logVariables = function() {
 	console.log (paint.confFu (), 'variables:');
-	for (var varPath in this.variables) {
-		var value = (this.variables[varPath] && this.variables[varPath].constructor === Array) ? this.variables[varPath][1] : this.variables[varPath];
+	for (var varPath in this.setupVariables) {
+		var prefix = '[setup]';
+		// TODO: show overriden values
+		var value = (this.setupVariables[varPath] && this.setupVariables[varPath].constructor === Array)
+			? this.setupVariables[varPath][0]
+			: this.setupVariables[varPath];
+		console.log ("\t", prefix, paint.path(varPath), '=', value);
+		//		this.variables[varPath] = value || "<#undefined>";
+	}
+	for (varPath in this.variables) {
+		var value = (this.variables[varPath] && this.variables[varPath].constructor === Array)
+			? this.variables[varPath][1]
+			: this.variables[varPath];
 		console.log ("\t", paint.path(varPath), '=', value);
 //		this.variables[varPath] = value || "<#undefined>";
 	}
@@ -455,7 +468,7 @@ ConfFuIO.prototype.logUnpopulated = function(varPaths) {
 	var messageChunks = [
 		this.fixupFile? "" : "you must define fixup path, then",
 		"you can run",
-		"\n" + paint.confFu ("TODO: <variable> <value>"),
+		"\n" + paint.confFu ("<variable> <value>"),
 		"\nto define individual variables or edit",
 		this.fixupFile ? paint.path (this.fixupFile.shortPath ()) : "fixup file",
 		"to define all those vars at once"
