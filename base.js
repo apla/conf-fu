@@ -2,10 +2,10 @@ var ConfFu = function (options) {
 	if (!options || !options.config) {
 		throw "no options defined, please supply config and fixup";
 	}
-	
+
 	this.config = options.config;
 	this.fixup  = options.fixup;
-	
+
 	this.variables    = {};
 	this.placeholders = {};
 
@@ -220,7 +220,7 @@ ConfFu.prototype.applyFixup = function () {
 	if (this.fixup) {
 		extend (this.config, this.fixup);
 	}
-	
+
 	return this.interpolateVars ();
 };
 

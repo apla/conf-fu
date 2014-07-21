@@ -1,42 +1,42 @@
 {
-  "name": "conf-fu",
-  "description": "Advanced configuration with includes, variables and placeholders.",
   "version": "0.3.0",
-  "keywords": [
-    "configuration",
-    "settings"
-  ],
-  "bin": {
-	  "conf-fu": "bin/conf-fu.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/apla/conf-fu.git"
-  },
-  "peerDependencies": {
-    "minimist": "*"
-  },
-  "devDependencies": {
-    "mocha": "*"
-  },
-  "engines": {
-    "node": ">=0.8.0",
-    "npm": ">=1.2.10"
-  },
-  "preferGlobal": true,
-  "homepage": "https://github.com/apla/conf-fu",
-  "author": "https://github.com/apla/",
-  "main": "index.js",
-  "directories": {
-    "example": "example",
-    "test": "test"
-  },
-  "optionalDependencies": {},
-  "_engineSupported": true,
-  "_defaultsLoaded": true,
-  "scripts": {
-    "test": "/usr/bin/env mocha --reporter list"
-  },
-  "license": "GPLv3",
-  "readmeFilename": "README.md"
+	"name": "conf-fu",
+	"description": "Advanced configuration with includes, variables and placeholders.",
+	"keywords": [
+		"configuration",
+		"settings"
+	],
+	"bin": {
+		"conf-fu": "bin/conf-fu.js"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/apla/conf-fu.git"
+	},
+	"peerDependencies": {
+		"minimist": "*"
+	},
+	"devDependencies": {
+		"mocha": "*"
+	},
+	"engines": {
+		"node": ">=0.8.0",
+		"npm": ">=1.2.10"
+	},
+	"preferGlobal": true,
+	"homepage": "https://github.com/apla/conf-fu",
+	"author": "https://github.com/apla/",
+	"main": "index.js",
+	"directories": {
+		"example": "example",
+		"test": "test"
+	},
+	"optionalDependencies": {},
+	"_engineSupported": true,
+	"_defaultsLoaded": true,
+	"scripts": {
+		"test": "/usr/bin/env mocha --reporter list"
+	},
+	"license": "GPLv3",
+	"readmeFilename": "README.md"
 }
