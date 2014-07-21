@@ -347,6 +347,8 @@ ConfFuIO.prototype.setVariables = function (fixupVars, force) {
 	self.super_.prototype.setVariables.apply (self, arguments);
 
 	if (this.fixupFile) {
+		// TODO: create fixup directory or display message for user
+
 		// wrote config to the fixup file
 		var validFixupString;
 		if (this.fixupFile.stringify)
