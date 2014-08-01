@@ -2,6 +2,20 @@ var ConfFu = require ('./index');
 
 var paint = ConfFu.paint;
 
+function runEditor (fileName) {
+	var child_process = require ('child_process');
+
+	var editor = process.env.EDITOR || 'vim';
+
+	var child = child_process.spawn(editor, [fileName], {
+		stdio: 'inherit'
+	});
+
+	child.on('exit', function (e, code) {
+		console.log("finished");
+	});
+}
+
 var cli = {
 	dump: function () {
 		console.log (JSON.stringify (this.config, null, "\t"));
@@ -10,10 +24,19 @@ var cli = {
 	vars: function () {
 		this.logVariables ();
 	},
-	_: function () { // this is hackish function. if we found orphan parameters, we launch this function to set parameters
+	_: function () { // this is a bit hackish function. if we found orphan parameters, we launch this function to set parameters
 
+	},
+	edit: function (options) {
+		if (options.edit === "fixup") {
+			runEditor (this.fixupFile.path);
+		} else if (options.edit === "core") {
+			runEditor (this.configFile.path);
+		}
 	}
 };
+
+cli.editAnyway = cli.edit;
 
 function onConfigReady (options) {
 	// options must be handled before variables setup
@@ -58,6 +81,7 @@ function onConfigReady (options) {
 function onConfigFail (options) {
 	var haveCommand;
 	var haveParams  = options._;
+
 	for (var k in options) {
 		if (!(k+'Anyway' in cli))
 			continue;
