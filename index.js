@@ -72,6 +72,7 @@ function ConfFuIO (options) {
 		coreLoaded:     null,
 		includesLoaded: null,
 		fixupLoaded:    null,
+		alienRead:      null
 	};
 
 	var self = this;
@@ -101,8 +102,24 @@ function ConfFuIO (options) {
 		}
 	});
 
-	this.on ('ready', function () {self.ready = true;});
-	this.on ('notReady', function () {self.ready = false;});
+	this.on ('ready', function () {
+		if (self.verbose) {console.log (paint.confFu (), 'config ready');}
+		self.ready = true;
+	});
+
+	this.on ('notReady', function () {
+		if (self.verbose) {console.error (paint.confFu (), paint.error ('config not ready'));}
+		self.ready = false;
+	});
+
+	this.on ('fixupApplied', function () {
+		if (self.verbose) {
+			console.error (paint.confFu (), 'fixup applied');
+		}
+		if (self.aliens) {
+
+		}
+	});
 
 	this.on ('error', this.errorHandler.bind (this));
 
@@ -164,7 +181,15 @@ ConfFuIO.prototype.loadAll = function () {
 		this.fixupFile.readAndParseFile (this.onFixupRead.bind (this));
 	if (this.instanceFile)
 		this.instanceFile.readFile (this.onInstanceRead.bind (this));
-
+	if (this.alienFiles) {
+		for (var alienFileTmpl in this.alienFiles) {
+			this.analyzeAlien (
+				this.alienFiles[alienFileTmpl].tmpl,
+				this.alienFiles[alienFileTmpl].file,
+				this.alienFiles[alienFileTmpl].cb
+			);
+		}
+	}
 };
 
 ConfFuIO.prototype.errorHandler = function (eOrigin, eType, eData, eFile) {
@@ -212,6 +237,10 @@ ConfFuIO.prototype.applyFixup = function () {
 	}
 
 	var isReady = this.super_.prototype.applyFixup.call (this);
+
+	// user can launch hooks after fixup applied event
+	this.emit ('fixupApplied');
+
 	var readyEventName = isReady ? 'ready' : 'notReady';
 	if (this.ioWait > 0) {
 		this.onIOFinish = this.emit.bind (this, readyEventName);
@@ -224,7 +253,16 @@ ConfFuIO.prototype.applyFixup = function () {
 	}
 };
 
-ConfFuIO.prototype.interpolateAlien = function (alienFileTmpl, alienFile, cb) {
+ConfFuIO.prototype.addAlien = function (alienFileTmpl, alienFile, cb) {
+	this.alienFiles = this.alienFiles || {};
+	this.alienFiles[alienFileTmpl.path || alienFileTmpl] = {
+		tmpl: alienFileTmpl,
+		file: alienFile,
+		cb:   cb
+	};
+}
+
+ConfFuIO.prototype.analyzeAlien = function (alienFileTmpl, alienFile, cb) {
 	if (!(alienFileTmpl instanceof io)) {
 		alienFileTmpl = new io (alienFileTmpl);
 	}
@@ -252,13 +290,17 @@ ConfFuIO.prototype.interpolateAlien = function (alienFileTmpl, alienFile, cb) {
 			self.emit ('error', 'alien', 'variables', e);
 			self.setVariables (e, true);
 			// TODO: emit something if cb is undefined?
+			self.ioWait --;
 			cb && cb (error, interpolated);
+
 			return;
 		};
 
 		if (alienFile === false || alienFile === null) {
 			// TODO: emit something if cb is undefined?
+			self.ioWait --;
 			cb && cb (error, interpolated);
+
 			return;
 		} else if ((alienFile === true || alienFile === undefined) && alienFileTmpl.extension === self.alienExt) {
 			alienFile = new io (alienFileTmpl.path.slice (0, -1 * (self.alienExt.length + 1)));
@@ -267,6 +309,66 @@ ConfFuIO.prototype.interpolateAlien = function (alienFileTmpl, alienFile, cb) {
 		}
 
 		alienFile.writeFile (interpolated, function (err) {
+			self.ioWait --;
+			cb && cb (err, interpolated, alienFile);
+		});
+
+
+	});
+}
+
+
+ConfFuIO.prototype.interpolateAlien = function (alienFileTmpl, alienFile, cb) {
+	if (!(alienFileTmpl instanceof io)) {
+		alienFileTmpl = new io (alienFileTmpl);
+	}
+
+	var self = this;
+
+	self.ioWait ++;
+
+	alienFileTmpl.readFile (function (err, data) {
+		if (err) {
+			self.emit ('error', 'alien', 'file', err, alienFileTmpl.path);
+			self.ioWait --;
+			return;
+		}
+
+		// TODO: stream parser
+		var value = data.toString();
+
+		// TODO: remove copy-paste
+		var variableReg   = /<((\$)((int|quoted|bool)(\(([^\)]*)\))?:)?([^>=]+)(=([^>]*))?)>/gi;
+		var marks = {start: '<', end: '>', typeRaw: '$', typeSafe: '🐸'};
+		var toInterpolate = value.replace (variableReg, "<$$$7>");
+		var interpolated, error;
+		try {
+			interpolated = ConfFuIO.interpolate (toInterpolate, self.config, marks, true);
+		} catch (e) {
+			error = e;
+			self.emit ('error', 'alien', 'variables', e);
+			self.setVariables (e, true);
+			// TODO: emit something if cb is undefined?
+			self.ioWait --;
+			cb && cb (error, interpolated);
+
+			return;
+		};
+
+		if (alienFile === false || alienFile === null) {
+			// TODO: emit something if cb is undefined?
+			self.ioWait --;
+			cb && cb (error, interpolated);
+
+			return;
+		} else if ((alienFile === true || alienFile === undefined) && alienFileTmpl.extension === self.alienExt) {
+			alienFile = new io (alienFileTmpl.path.slice (0, -1 * (self.alienExt.length + 1)));
+		} else if (!(alienFile instanceof io)) { // assumed string path
+			alienFile = new io (alienFile);
+		}
+
+		alienFile.writeFile (interpolated, function (err) {
+			self.ioWait --;
 			cb && cb (err, interpolated, alienFile);
 		});
 
@@ -356,8 +458,10 @@ ConfFuIO.prototype.setVariables = function (fixupVars, force) {
 
 		if (validFixupString) {
 			self.ioWait ++;
-			this.fixupFile.writeFile (validFixupString, function () {
-				// TODO: error handling for fixup write
+			this.fixupFile.writeFile (validFixupString, function (err) {
+				if (err) {
+					console.error (paint.confFu(), 'write error for ', paint.path (this.fixupFile.path), ':', err);
+				}
 				self.ioWait --;
 			});
 		}
@@ -471,10 +575,9 @@ ConfFuIO.prototype.logUnpopulated = function(varPaths) {
 		varPaths[varPath] = value || "<#undefined>";
 	}
 	var messageChunks = [
-		this.fixupFile? "" : "you must define fixup path, then",
-		"you can run",
-		"\n" + paint.confFu ("<variable> <value>"),
-		"\nto define individual variables or edit",
+		paint.error ((this.fixupFile? "" : "you must define fixup path, then") + "you can execute"),
+		paint.confFu ("<variable> <value>"),
+		"to define individual variables\n or edit",
 		this.fixupFile ? paint.path (this.fixupFile.shortPath ()) : "fixup file",
 		"to define all those vars at once"
 	];

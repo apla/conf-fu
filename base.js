@@ -8,6 +8,7 @@ var ConfFu = function (options) {
 
 	this.variables    = {};
 	this.placeholders = {};
+	this.aliens       = {};
 
 	this.setupVariables = options.setupVariables || {};
 
