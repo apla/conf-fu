@@ -24,7 +24,9 @@ var cli = {
 	vars: function () {
 		this.logVariables ();
 	},
-	_: function () { // this is a bit hackish function. if we found orphan parameters, we launch this function to set parameters
+	_: function () {
+		// this is a bit hackish function.
+		// if we found orphan parameters, we launch this function to set parameters
 
 	},
 	edit: function (options) {
@@ -120,9 +122,11 @@ function onConfigError (options, eOrigin, eType, eData, eFile) {
 	var logger = console.error.bind (console);
 
 	if (eType === 'parse') {
+		console.log (paint.confFu (), eOrigin, 'file', eType, paint.error ('cli cannot continue, terminating process'));
 		process.kill ();
 	} else if (eType === 'file') {
-		if (eOrigin !== 'fixup') {
+		if (eOrigin !== 'fixup' && eOrigin !== 'alien') {
+			console.log (paint.confFu (), eOrigin, 'file', eType, paint.error ('cli cannot continue, terminating process'));
 			process.kill ();
 		}
 	} else if (eType === 'variables') {
