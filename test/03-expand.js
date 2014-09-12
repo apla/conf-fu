@@ -88,24 +88,26 @@ describe ("format string", function () {
 		console.log (interpolated, enchanted);
 		return;
 	});
-	it.skip ("bool", function () {
+	it ("bool", function () {
 		var enchanted = confFu.prototype.isEnchantedValue ("<$bool:have_db>");
-		assert (enchanted.type === 'bool');
+		assert (enchanted[0].type === 'bool');
 		return "variable" in enchanted;
 	});
-	it.skip ("bool with custom status", function () {
+	it ("bool with custom status", function () {
 		var enchanted = confFu.prototype.isEnchantedValue ("<$bool(on|off):have_db>");
-		assert (enchanted.type === 'bool');
+		assert (enchanted[0].type === 'bool');
 		return "variable" in enchanted;
 	});
-	it.skip ("bool with custom status and default", function () {
+	it ("bool with custom status and default", function () {
 		var enchanted = confFu.prototype.isEnchantedValue ("<$bool(on|off):have_db=off>");
-		assert (enchanted.type === 'bool');
+		console.log (enchanted);
+		assert (enchanted[0].type === 'bool');
+		assert (enchanted[0].default === 'off');
 		return "variable" in enchanted;
 	});
-	it.skip ("quoted string", function () {
+	it ("quoted string", function () {
 		var enchanted = confFu.prototype.isEnchantedValue ("<$string(\"\"):http_domain>");
-		assert (enchanted.type === 'bool');
+		assert (enchanted.type === 'string');
 		return "variable" in enchanted;
 	});
 

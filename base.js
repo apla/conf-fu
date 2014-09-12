@@ -372,8 +372,7 @@ ConfFu.prototype.iterateTree = function iterateTree (tree, cb, depth) {
 ConfFu.prototype.isEnchantedValue = function (value) {
 
 	var tagRe = /<(([\$\#]*)((optional|default):)*([^>]+))>/;
-	var variableRe    = /<((\$)((int|quoted|bool)(\(([^\)]*)\))?:)?([^>=]+)(=([^>]*))?)>/i;
-	var variableReg   = /<((\$)((int|quoted|bool)(\(([^\)]*)\))?:)?([^>=]+)(=([^>]*))?)>/ig;
+	var variableReg   = /<((\$)((int|string|bool)(\(([^\)]*)\))?:)?([^>=]+)(=([^>]*))?)>/ig;
 	var placeholderRe = /^<((\#)((optional|default):)?([^>]+))>$/i;
 	var includeRe     = /^<<([^<>]+)>>$/i;
 
@@ -400,10 +399,11 @@ ConfFu.prototype.isEnchantedValue = function (value) {
 			variable: matchData[7],
 			type:     matchData[4],
 			typeArgs: matchData[6],
-			defaults: matchData[9],
+			default: matchData[9],
 			lastIdx:  variableReg.lastIndex,
 			before:   before
 		};
+		result.variable = true;
 		// WTF support legacy code
 		if (result.length === 0) {
 			result.variable = result[0].variable;
