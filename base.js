@@ -385,26 +385,75 @@ ConfFu.prototype.isEnchantedValue = function (value) {
 
 	var self = this;
 
-	var check;
-	if (check = value.match (variableRe)) {
-		var marks = {start: '<', end: '>', typeRaw: '$', typeSafe: '🐸'};
-		result = {
-			variable: check[7],
-			type:     check[4],
-			typeArgs: check[6],
-			defaults: check[9],
-			interpolated: function (dictionary) {
-				var toInterpolate = value.replace (variableReg, "<$$$7>");
-				try {
-					return interpolate (toInterpolate, dictionary, marks, true);
-				} catch (e) {
-					result.failure = e;
-					return undefined;
-				}
-			}
+	var matchData;
+	var lastIdx = 0;
+	while ((matchData = variableReg.exec (value)) !== null) {
+		if (!result)
+			result = {length: 0};
+//		matchData.index
+		var before = (matchData.index === lastIdx === 0)? null : value.substring (
+			lastIdx,
+			matchData.index
+		);
+		lastIdx = variableReg.lastIndex;
+		result[result.length] = {
+			variable: matchData[7],
+			type:     matchData[4],
+			typeArgs: matchData[6],
+			defaults: matchData[9],
+			lastIdx:  variableReg.lastIndex,
+			before:   before
 		};
+		// WTF support legacy code
+		if (result.length === 0) {
+			result.variable = result[0].variable;
+			result.type     = result[0].type;
+			result.typeArgs = result[0].typeArgs;
+			result.defaults = result[0].defaults;
+		}
+		result.length ++;
+	}
+
+	if (result && result.length) {
+		var after = (value.length === lastIdx + 1) ? null : value.substring (lastIdx);
+		result.interpolated = function (dictionary) {
+
+			try {
+				var toConcat = [];
+				for (var k = 0; k < result.length; k++) {
+					if (result[k].before)
+						toConcat.push (result[k].before);
+					toConcat.push (pathToVal (dictionary, result[k].variable));
+				}
+				if (after)
+					toConcat.push (after);
+				if (toConcat.length === 1)
+					return toConcat[0];
+				return toConcat.join ("");
+			} catch (e) {
+				result.failure = e;
+				return undefined;
+			}
+		}
+
+		if (0) {
+			var toConcat = [];
+			for (var k = 0; k < result.length; k++) {
+				if (result[k].before !== "")
+					toConcat.push (result[k].before);
+				toConcat.push (result[k].variable);
+			}
+			if (after)
+				toConcat.push (after);
+			if (toConcat.length === 1)
+				console.log (toConcat[0]);
+			console.log (toConcat);
+
+		}
 		return result;
-	} else if (check = value.match (placeholderRe)) {
+	}
+
+	if (check = value.match (placeholderRe)) {
 		result = {"placeholder": check[5]};
 		if (check[4]) {
 			result[check[4]] = check[5];

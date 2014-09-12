@@ -62,14 +62,25 @@ describe ("format string", function () {
 	var data = {
 		http_host: 12345,
 		http_domain: "example.net",
+		http_port: 808080,
 		have_db: false,
 	};
 
 	it ("raw int", function () {
 		var enchanted = confFu.prototype.isEnchantedValue ("<$http_host>");
 		var interpolated = enchanted.interpolated (data);
+		// ensure int is real int, not within string
+		assert (interpolated.constructor === Number);
 		return parseInt (interpolated) === interpolated;
 	});
+	it ("multiple values", function () {
+		var enchanted = confFu.prototype.isEnchantedValue ("<$http_domain>:<$http_port>");
+		var interpolated = enchanted.interpolated (data);
+		assert (enchanted.length === 2);
+		assert (interpolated === (data.http_domain + ':' + data.http_port));
+		return;
+	});
+
 	it.skip ("string as int", function () {
 		var enchanted = confFu.prototype.isEnchantedValue ("<$int:http_domain>");
 		var interpolated = enchanted.interpolated (data);
