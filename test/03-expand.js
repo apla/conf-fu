@@ -63,7 +63,7 @@ describe ("format string", function () {
 		http_host: 12345,
 		http_domain: "example.net",
 		http_port: 808080,
-		have_db: false,
+		db_tcp_sock: false,
 	};
 
 	it ("raw int", function () {
@@ -80,6 +80,13 @@ describe ("format string", function () {
 		assert (interpolated === (data.http_domain + ':' + data.http_port));
 		return;
 	});
+	it ("multiple values 2", function () {
+		var enchanted = confFu.prototype.isEnchantedValue ("one<$http_domain>two<$http_port>three");
+		var interpolated = enchanted.interpolated (data);
+		assert (enchanted.length === 2);
+		assert (interpolated === ("one"+data.http_domain + 'two' + data.http_port+"three"));
+		return;
+	});
 
 	it.skip ("string as int", function () {
 		var enchanted = confFu.prototype.isEnchantedValue ("<$int:http_domain>");
@@ -89,20 +96,31 @@ describe ("format string", function () {
 		return;
 	});
 	it ("bool", function () {
-		var enchanted = confFu.prototype.isEnchantedValue ("<$bool:have_db>");
+		var enchanted = confFu.prototype.isEnchantedValue ("<$bool:db_tcp_sock>");
 		assert (enchanted[0].type === 'bool');
 		return "variable" in enchanted;
 	});
 	it ("bool with custom status", function () {
-		var enchanted = confFu.prototype.isEnchantedValue ("<$bool(on|off):have_db>");
+		var enchanted = confFu.prototype.isEnchantedValue ("<$bool(on|off):db_tcp_sock>");
 		assert (enchanted[0].type === 'bool');
 		return "variable" in enchanted;
 	});
 	it ("bool with custom status and default", function () {
-		var enchanted = confFu.prototype.isEnchantedValue ("<$bool(on|off):have_db=off>");
-		console.log (enchanted);
+		var enchanted = confFu.prototype.isEnchantedValue ("<$bool(on|off):db_tcp_sock=off>");
 		assert (enchanted[0].type === 'bool');
 		assert (enchanted[0].default === 'off');
+		return "variable" in enchanted;
+	});
+	it ("bool with custom status and default interpolated", function () {
+		var enchanted = confFu.prototype.isEnchantedValue ("<$bool(on|off):db_tcp_sock=off>");
+		var interpolated = enchanted.interpolated (data);
+		assert (interpolated === 'off');
+		return "variable" in enchanted;
+	});
+	it.skip ("bool default interpolated", function () {
+		var enchanted = confFu.prototype.isEnchantedValue ("<$bool(on|off):db_unix_sock=on>");
+		var interpolated = enchanted.interpolated (data);
+		assert (interpolated === 'off');
 		return "variable" in enchanted;
 	});
 	it ("quoted string", function () {
@@ -110,7 +128,6 @@ describe ("format string", function () {
 		assert (enchanted.type === 'string');
 		return "variable" in enchanted;
 	});
-
 });
 
 //		if ("placeholder" in enchanted) {

@@ -17,6 +17,8 @@ var ConfFu = function (options) {
 
 ConfFu.prototype.formats = require ('./formats');
 
+ConfFu.prototype.types = require ('./types');
+
 module.exports = ConfFu;
 
 var jqextend = function () {
@@ -376,6 +378,8 @@ ConfFu.prototype.isEnchantedValue = function (value) {
 	var placeholderRe = /^<((\#)((optional|default):)?([^>]+))>$/i;
 	var includeRe     = /^<<([^<>]+)>>$/i;
 
+	var self = this;
+
 	var result;
 
 	if ('string' !== typeof value) {
@@ -409,7 +413,7 @@ ConfFu.prototype.isEnchantedValue = function (value) {
 			result.variable = result[0].variable;
 			result.type     = result[0].type;
 			result.typeArgs = result[0].typeArgs;
-			result.defaults = result[0].defaults;
+			result.default = result[0].default;
 		}
 		result.length ++;
 	}
@@ -421,9 +425,13 @@ ConfFu.prototype.isEnchantedValue = function (value) {
 			try {
 				var toConcat = [];
 				for (var k = 0; k < result.length; k++) {
-					if (result[k].before)
-						toConcat.push (result[k].before);
-					toConcat.push (pathToVal (dictionary, result[k].variable));
+					var theVar = result[k];
+					if (theVar.before)
+						toConcat.push (theVar.before);
+					var interpolatedVar = pathToVal (dictionary, theVar.variable);
+					if (self.types[theVar.type])
+						interpolatedVar = self.types[theVar.type] (theVar, interpolatedVar);
+					toConcat.push (interpolatedVar);
 				}
 				if (after)
 					toConcat.push (after);
