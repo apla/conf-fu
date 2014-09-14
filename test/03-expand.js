@@ -129,6 +129,30 @@ describe (baseName+" format string", function () {
 		assert (enchanted[0].type === 'string');
 		return "variable" in enchanted;
 	});
+	it ("custom marks", function () {
+		var enchanted = confFu.prototype.isEnchantedValue (
+			"{{&string(\"\"):http_domain}}", {
+				end: "}}",
+				start: "{{",
+				safe: "&"
+			});
+		assert (enchanted[0].type === 'string');
+		return "variable" in enchanted;
+	});
+	it ("custom types", function () {
+		confFu.prototype.types._jsonFor_test = function (meta, value) {
+			return JSON.stringify (value, null, meta.typeArgs || "");
+		};
+		var enchanted = confFu.prototype.isEnchantedValue ("<$_jsonFor_test(\t):toJson>");
+		var interpolated = enchanted.interpolated ({
+			toJson: {a: 1, b: "$%^"}
+		});
+//		console.log (interpolated);
+		var data = JSON.parse (interpolated);
+		assert (data.a === 1);
+		assert (data.b === "$%^");
+		return true;
+	});
 });
 
 //		if ("placeholder" in enchanted) {

@@ -385,9 +385,10 @@ ConfFu.prototype.isEnchantedValue = function (value, _marks) {
 		_marks = {};
 	extend (marks, _marks);
 
+	var vartypesRe = Object.keys (this.types).join ("|");
 	var variableReg = new RegExp (
 		marks.start
-		+"((["+marks.safe+marks.raw+"])((int|string|bool)(\\(([^\)]*)\\))?:)?([^>=]+)(=([^>]*))?)"
+		+"((["+marks.safe+marks.raw+"])(("+vartypesRe+")(\\(([^\)]*)\\))?:)?([^>=]+)(=([^>]*))?)"
 		+marks.end,
 	"ig");
 	var placeholderRe = /^<((\#)((optional|default):)?([^>]+))>$/i;

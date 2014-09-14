@@ -36,5 +36,16 @@ module.exports = {
 		if (presentation)
 			return presentation.reverse()[value*1];
 		return value.toString();
+	},
+	string: function (meta, value) {
+		if (value !== undefined && value.constructor !== String)
+			throw new Error ('not a string');
+		if (value === undefined && meta.default !== undefined)
+			value = meta.default;
+		// TODO: add a string quote, test already in 03-expand
+		// typeArgs for string is a quoting preference
+//		if (meta.typeArgs === '""')
+//			value
+		return value;
 	}
 }
