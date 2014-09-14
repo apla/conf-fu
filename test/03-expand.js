@@ -46,12 +46,12 @@ describe ("parse string", function () {
 	});
 	it ("with int variable enchantment", function () {
 		var enchanted = confFu.prototype.isEnchantedValue ("<$int:http_host>");
-		assert (enchanted.type === 'int');
+		assert (enchanted[0].type === 'int');
 		return "variable" in enchanted;
 	});
 	it ("with boolean variable enchantment", function () {
 		var enchanted = confFu.prototype.isEnchantedValue ("<$bool:have_db>");
-		assert (enchanted.type === 'bool');
+		assert (enchanted[0].type === 'bool');
 		return "variable" in enchanted;
 	});
 
@@ -125,7 +125,7 @@ describe ("format string", function () {
 	});
 	it ("quoted string", function () {
 		var enchanted = confFu.prototype.isEnchantedValue ("<$string(\"\"):http_domain>");
-		assert (enchanted.type === 'string');
+		assert (enchanted[0].type === 'string');
 		return "variable" in enchanted;
 	});
 });

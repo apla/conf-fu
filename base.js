@@ -160,7 +160,7 @@ var pathToVal = module.exports.pathToVal = function (dict, path, value, method) 
  * @param {type} mustThrow must throw on interpolation error or just return undef
 
  */
-
+// TODO: sync interpolate and interpolated in enchanted vars
 var interpolate = ConfFu.interpolate = function (str, dict, marks, mustThrow) {
 	if (!marks)
 		marks = {};
@@ -371,10 +371,25 @@ ConfFu.prototype.iterateTree = function iterateTree (tree, cb, depth) {
 };
 
 
-ConfFu.prototype.isEnchantedValue = function (value) {
+ConfFu.prototype.isEnchantedValue = function (value, _marks) {
 
-	var tagRe = /<(([\$\#]*)((optional|default):)*([^>]+))>/;
-	var variableReg   = /<((\$)((int|string|bool)(\(([^\)]*)\))?:)?([^>=]+)(=([^>]*))?)>/ig;
+	var marks = {
+		start: '<',
+		end: '>',
+		path: '.',
+		safe: '$',
+		raw: '*',
+		placeholder: '#'
+	};
+	if (!_marks)
+		_marks = {};
+	extend (marks, _marks);
+
+	var variableReg = new RegExp (
+		marks.start
+		+"((["+marks.safe+marks.raw+"])((int|string|bool)(\\(([^\)]*)\\))?:)?([^>=]+)(=([^>]*))?)"
+		+marks.end,
+	"ig");
 	var placeholderRe = /^<((\#)((optional|default):)?([^>]+))>$/i;
 	var includeRe     = /^<<([^<>]+)>>$/i;
 
@@ -403,18 +418,11 @@ ConfFu.prototype.isEnchantedValue = function (value) {
 			variable: matchData[7],
 			type:     matchData[4],
 			typeArgs: matchData[6],
-			default: matchData[9],
+			default:  matchData[9],
 			lastIdx:  variableReg.lastIndex,
 			before:   before
 		};
 		result.variable = true;
-		// WTF support legacy code
-		if (result.length === 0) {
-			result.variable = result[0].variable;
-			result.type     = result[0].type;
-			result.typeArgs = result[0].typeArgs;
-			result.default = result[0].default;
-		}
 		result.length ++;
 	}
 
@@ -442,21 +450,6 @@ ConfFu.prototype.isEnchantedValue = function (value) {
 				result.failure = e;
 				return undefined;
 			}
-		}
-
-		if (0) {
-			var toConcat = [];
-			for (var k = 0; k < result.length; k++) {
-				if (result[k].before !== "")
-					toConcat.push (result[k].before);
-				toConcat.push (result[k].variable);
-			}
-			if (after)
-				toConcat.push (after);
-			if (toConcat.length === 1)
-				console.log (toConcat[0]);
-			console.log (toConcat);
-
 		}
 		return result;
 	}
