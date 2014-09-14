@@ -429,6 +429,7 @@ ConfFu.prototype.isEnchantedValue = function (value, _marks) {
 	if (result && result.length) {
 		var after = (value.length === lastIdx + 1) ? null : value.substring (lastIdx);
 		result.interpolated = function (dictionary) {
+			delete result.error;
 
 			try {
 				var toConcat = [];
@@ -447,7 +448,7 @@ ConfFu.prototype.isEnchantedValue = function (value, _marks) {
 					return toConcat[0];
 				return toConcat.join ("");
 			} catch (e) {
-				result.failure = e;
+				result.error = e;
 				return undefined;
 			}
 		}

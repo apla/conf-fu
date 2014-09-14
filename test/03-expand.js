@@ -88,11 +88,12 @@ describe (baseName+" format string", function () {
 		return;
 	});
 
-	it.skip ("string as int", function () {
+	it ("string as int", function () {
 		var enchanted = confFu.prototype.isEnchantedValue ("<$int:http_domain>");
 		var interpolated = enchanted.interpolated (data);
 		assert (interpolated === undefined);
-		console.log (interpolated, enchanted);
+		assert ("error" in enchanted);
+//		console.log (interpolated, enchanted);
 		return;
 	});
 	it ("bool", function () {
