@@ -7,14 +7,22 @@ var confFuPath = require.resolve('../index');
 
 var globalVerbose = process.env.VERBOSE || false;
 
-describe ("tech debt", function () {
-	var confFuContents = fs.readFileSync (confFuPath);
-	var todos = confFuContents.toString().match (/TODO[^\n\r]+|WTF[^\n\r]+/g);
-	if (todos) {
-		todos.forEach (function (todoText) {
-			it.skip (todoText);
-//			console.log (todoText);
-		});
-	}
+var files = fs.readdirSync (path.join (__dirname, '..'));
+
+describe ("01 tech debt", function () {
+	files.forEach (function (fileName) {
+		if (fileName.match (/^\./) || !fileName.match (/\.js$/)) {
+			return;
+		}
+		var fileContents = fs.readFileSync (fileName);
+		var todos = fileContents.toString().match (/TODO[^\n\r]+|WTF[^\n\r]+/g);
+		if (todos) {
+			todos.forEach (function (todoText) {
+				it.skip (fileName + ': ' + todoText);
+				//			console.log (todoText);
+			});
+		}
+
+	});
 
 });

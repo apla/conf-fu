@@ -6,12 +6,12 @@ var confFu     = require ('../base');
 var confFuPath = require.resolve('../base');
 
 // TODO: use script name
-var assets = path.basename (__filename, path.extname (__filename));
-var configDir = path.join (__dirname, assets);
+var baseName = path.basename (__filename, path.extname (__filename));
+var configDir = path.join (__dirname, baseName);
 
 var globalVerbose = process.env.VERBOSE || false;
 
-describe ("launch base.js with populated config and fixup objects", function () {
+describe (baseName+" launch base.js with populated config and fixup objects", function () {
 
 	it ("should return config", function () {
 		var config = new confFu ({
@@ -20,13 +20,13 @@ describe ("launch base.js with populated config and fixup objects", function () 
 		});
 
 		config.verbose = globalVerbose || false;
-		
+
 		assert (config.ready, 'config ready');
 		assert (config.config.a.b.c === false, 'fixup applied');
 	});
 });
 
-describe ("launch base.js with config", function () {
+describe (baseName+" launch base.js with config", function () {
 
 	it ("should return config", function () {
 		var config = new confFu ({

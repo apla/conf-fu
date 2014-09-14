@@ -5,12 +5,12 @@ var assert = require ('assert');
 var confFu     = require ('../index');
 var confFuPath = require.resolve('../index');
 
-var assets = path.basename (__filename, path.extname (__filename));
-var configDir = path.join (__dirname, assets);
+var baseName = path.basename (__filename, path.extname (__filename));
+var configDir = path.join (__dirname, baseName);
 
 var globalVerbose = process.env.VERBOSE || false;
 
-describe ("loading config", function () {
+describe (baseName+" loading config", function () {
 
 	afterEach (function(done) {
 		// TODO: unlink not-found.json

@@ -5,9 +5,8 @@ var assert = require ('assert');
 var confFu     = require ('../index');
 var confFuPath = require.resolve('../index');
 
-// TODO: use script name
-var assets = path.basename (__filename, path.extname (__filename));
-var configDir = path.join (__dirname, assets);
+var baseName = path.basename (__filename, path.extname (__filename));
+var configDir = path.join (__dirname, baseName);
 
 var globalVerbose = process.env.VERBOSE || false;
 
@@ -22,16 +21,16 @@ var globalVerbose = process.env.VERBOSE || false;
 //console.log ("<<filename>>".match (regexp3));
 
 
-describe ("interpolate vars in external file", function () {
-	
+describe (baseName+" interpolate vars in external file", function () {
+
 	it ("with include enchantment", function (done) {
 		var config = new confFu ({
-			configFile: path.join (configDir, 'index.json'), 
+			configFile: path.join (configDir, 'index.json'),
 			fixupFile: path.join (configDir, 'fixup.json')
 		});
-		
+
 		config.verbose = globalVerbose || false;
-		
+
 		config.on ('ready', function () {
 			config.interpolateAlien (
 				path.join (configDir, 'httpd.conf.conf-fu'),
@@ -52,5 +51,5 @@ describe ("interpolate vars in external file", function () {
 //			}
 //		} else if ("variable" in enchanted) {
 //		} else if ("error" in enchanted || "include" in enchanted) {
-//			
+//
 //		}

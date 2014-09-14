@@ -5,8 +5,8 @@ var assert = require ('assert');
 var confFu     = require ('../index');
 var confFuPath = require.resolve('../index');
 
-var assets = path.basename (__filename, path.extname (__filename));
-var configDir = path.join (__dirname, assets);
+var baseName = path.basename (__filename, path.extname (__filename));
+var configDir = path.join (__dirname, baseName);
 
 var globalVerbose = process.env.VERBOSE || false;
 
@@ -21,7 +21,7 @@ var globalVerbose = process.env.VERBOSE || false;
 //console.log ("<<filename>>".match (regexp3));
 
 
-describe ("parse string", function () {
+describe (baseName+" parse string", function () {
 
 	it ("with include enchantment", function () {
 		var enchanted = confFu.prototype.isEnchantedValue ("<<include>>");
@@ -57,7 +57,7 @@ describe ("parse string", function () {
 
 });
 
-describe ("format string", function () {
+describe (baseName+" format string", function () {
 
 	var data = {
 		http_host: 12345,
