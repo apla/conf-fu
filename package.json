@@ -1,7 +1,7 @@
 {
 	"name": "conf-fu",
 	"description": "Advanced configuration with includes, variables and placeholders.",
-	"version": "0.4.1",
+	"version": "0.5.1",
 	"keywords": [
 		"configuration",
 		"settings"
@@ -14,7 +14,7 @@
 		"url": "https://github.com/apla/conf-fu.git"
 	},
 	"peerDependencies": {
-		"minimist": "*"
+		"yargs": "*"
 	},
 	"devDependencies": {
 		"mocha": "*"
