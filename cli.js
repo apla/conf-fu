@@ -110,9 +110,22 @@ var cli = {
 function initOptions () {
 
 	yargs.usage (initOptions.cli.help.banner, initOptions.cli);
+	yargs.help ('help', initOptions.cli.help.description);
 	var options = yargs.parse (process.argv);
 
 	for (var k in initOptions.cli) {
+		// clean up options a little
+		var aliases = initOptions.cli[k].alias;
+		if (aliases) {
+			if (aliases.constructor !== Array)
+				aliases = [aliases];
+			aliases.forEach (function (aliasName) {
+				if (aliasName in options && aliasName !== k) {
+					options[k] = options[aliasName]; // not really needed, insurance for a yargs api changes
+					delete options[aliasName];
+				}
+			});
+		}
 		if (!initOptions.cli[k].env)
 			continue;
 		if (options[k])
