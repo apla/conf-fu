@@ -24,7 +24,7 @@ var cli = {
 		description: "verbose output",
 		default: false
 	},
-	druRun: {
+	dryRun: {
 		alias: ["n", "dry-run"],
 		boolean: true,
 		description: "don't validate settings",
@@ -59,7 +59,6 @@ var cli = {
 	},
 	_: {
 		anyway: true, // launch anyway, even if error is present
-		help: "",
 		run: function (options) {
 			// this is a bit hackish function.
 			// if we found orphan parameters, we launch this function to set parameters
@@ -80,8 +79,8 @@ var cli = {
 		},
 	},
 	edit: {
-		anyway: true, // launch anyway, even if error is present
-		description: "run default editor for config, --edit core for core and --edit fixup for fixup",
+		anyway: true, // launch anyway, even if validation fails
+		description: "run default editor for config, `core` or `fixup`",
 		run: function (options) {
 			if (options.edit === "fixup") {
 				runEditor (this.fixupFile.path);
@@ -92,16 +91,9 @@ var cli = {
 	},
 	help: {
 		alias: "h",
-		boolean: true,
-		anyway: true, // launch anyway, even if error is present
+		anyway: true, // anyway here has no effect
 		before: true,
-		banner: paint.confFu() + " usage:",
-		run: function () {
-			console.log (cli.help.banner);
-			for (var paramName in cli) {
-				console.log (paint.path ("--"+paramName), cli[paramName].help);
-			}
-		}
+		banner: paint.confFu() + " usage:"
 	}
 };
 
@@ -151,7 +143,7 @@ function findCommand (options) {
 	for (var k in options) {
 		if (!(k in cli))
 			continue;
-		if (haveCommand) {
+		if (haveCommand && k !== '_' && cli[k].run) {
 			console.error (paint.confFu (), 'you cannot launch two commands at once:', [
 				paint.path (k), paint.path (haveCommand)
 			].join (' and '));
