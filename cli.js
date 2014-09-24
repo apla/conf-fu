@@ -46,7 +46,11 @@ var cli = {
 	},
 	dump: {
 		description: "dump current config as JSON",
-		run: function () {
+		run: function (options) {
+			if (options.dump.constructor !== Boolean && options.dump in this.config) {
+				console.log (JSON.stringify (this.config[options.dump], null, "\t"));
+				return;
+			}
 			console.log (JSON.stringify (this.config, null, "\t"));
 			return;
 		}
