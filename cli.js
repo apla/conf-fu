@@ -107,7 +107,7 @@ function initOptions () {
 
 	yargs.usage (initOptions.cli.help.banner, initOptions.cli);
 	yargs.help ('help', initOptions.cli.help.description);
-	var options = yargs.parse (process.argv);
+	var options = yargs.parse (process.argv.slice (2));
 
 	for (var k in initOptions.cli) {
 		// clean up options a little
