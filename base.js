@@ -318,7 +318,7 @@ ConfFu.prototype.unpopulatedVariables = function (fixupVars, force) {
 	return unpopulatedVars;
 }
 
-ConfFu.prototype.setVariables = function (fixupVars, force) {
+ConfFu.prototype.setVariables = function (fixupVars, force, undef) {
 	var self = this;
 	// ensure fixup is defined
 	// TODO: migration from instance-based
@@ -336,7 +336,7 @@ ConfFu.prototype.setVariables = function (fixupVars, force) {
 			var newRoot = root[chunk];
 			if (index === chunks.length - 1) {
 				if (force || !(chunk in root)) {
-					root[chunk] = (fixupVars[varPath] && fixupVars[varPath].constructor === Array) ? fixupVars[varPath][0] : fixupVars[varPath] || "<#undefined>";
+					root[chunk] = (fixupVars[varPath] && fixupVars[varPath].constructor === Array) ? fixupVars[varPath][0] : fixupVars[varPath] || undef;
 				}
 			} else if (!newRoot) {
 				root[chunk] = {};
@@ -408,7 +408,7 @@ ConfFu.prototype.isEnchantedValue = function (value, _marks) {
 	var lastIdx = 0;
 	while ((matchData = variableReg.exec (value)) !== null) {
 		if (!result)
-			result = {length: 0};
+			result = {length: 0, asVariables: {}};
 //		matchData.index
 		var before = (matchData.index === lastIdx === 0)? null : value.substring (
 			lastIdx,
@@ -423,6 +423,7 @@ ConfFu.prototype.isEnchantedValue = function (value, _marks) {
 			lastIdx:  variableReg.lastIndex,
 			before:   before
 		};
+		result.asVariables[matchData[7]] = [];
 		result.variable = true;
 		result.length ++;
 	}
@@ -441,6 +442,8 @@ ConfFu.prototype.isEnchantedValue = function (value, _marks) {
 					var interpolatedVar = pathToVal (dictionary, theVar.variable);
 					if (self.types[theVar.type])
 						interpolatedVar = self.types[theVar.type] (theVar, interpolatedVar);
+					if (interpolatedVar === undefined)
+						throw theVar.variable+' is not defined';
 					toConcat.push (interpolatedVar);
 				}
 				if (after)

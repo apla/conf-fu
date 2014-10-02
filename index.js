@@ -116,9 +116,6 @@ function ConfFuIO (options) {
 		if (self.verbose) {
 			console.error (paint.confFu (), 'fixup applied');
 		}
-		if (self.aliens) {
-
-		}
 	});
 
 	this.on ('error', this.errorHandler.bind (this));
@@ -142,6 +139,9 @@ function ConfFuIO (options) {
 	}
 	if (options.projectRoot)
 		this.projectRoot  = new io (options.projectRoot);
+
+	if (options.alienFiles)
+		this.alienFiles  = options.alienFiles;
 
 	var fixupFile = options.fixupFile;
 	if (fixupFile) {
@@ -181,15 +181,6 @@ ConfFuIO.prototype.loadAll = function () {
 		this.fixupFile.readAndParseFile (this.onFixupRead.bind (this));
 	if (this.instanceFile)
 		this.instanceFile.readFile (this.onInstanceRead.bind (this));
-	if (this.alienFiles) {
-		for (var alienFileTmpl in this.alienFiles) {
-			this.analyzeAlien (
-				this.alienFiles[alienFileTmpl].tmpl,
-				this.alienFiles[alienFileTmpl].file,
-				this.alienFiles[alienFileTmpl].cb
-			);
-		}
-	}
 };
 
 ConfFuIO.prototype.errorHandler = function (eOrigin, eType, eData, eFile) {
@@ -231,6 +222,23 @@ ConfFuIO.prototype.errorHandler = function (eOrigin, eType, eData, eFile) {
 
 };
 
+var ioWait = 0;
+ConfFuIO.prototype.ioDone = function (tag) {
+	var self = this;
+	ioWait++;
+	//console.log ('ioWait++', dirsToProcess);
+	return function () {
+		ioWait --;
+		//console.log ('ioWait--', dirsToProcess);
+		if (!ioWait)
+			setTimeout (function () {
+				if (!ioWait)
+					self.emit (tag || 'done');
+			}, 100);
+	}.bind (this);
+}
+
+
 ConfFuIO.prototype.applyFixup = function () {
 	if (this.checkList.coreLoaded === null || this.checkList.fixupLoaded === null) {
 		return;
@@ -239,6 +247,28 @@ ConfFuIO.prototype.applyFixup = function () {
 	var isReady = this.super_.prototype.applyFixup.call (this);
 
 	// user can launch hooks after fixup applied event
+
+	var self = this;
+	// here we have two possibilities:
+	// 1) alien file not read because enchanted filename
+	// 2) alien file was read but have additional variables to resolve
+	if (this.alienFiles && !this.checkList.alienRead) {
+		for (var alienFileTmpl in this.alienFiles) {
+			this.analyzeAlien (
+				this.alienFiles[alienFileTmpl].tmpl,
+				this.alienFiles[alienFileTmpl].file,
+				this.ioDone ('alien-read')
+				//this.alienFiles[alienFileTmpl].cb
+			);
+			this.ioWait ++;
+		}
+
+		this.on ('alien-read', this.applyFixup.bind (this));
+
+		this.checkList.alienRead = true;
+		return;
+	}
+
 	this.emit ('fixupApplied');
 
 	var readyEventName = isReady ? 'ready' : 'notReady';
@@ -263,7 +293,15 @@ ConfFuIO.prototype.addAlien = function (alienFileTmpl, alienFile, cb) {
 }
 
 ConfFuIO.prototype.analyzeAlien = function (alienFileTmpl, alienFile, cb) {
+
 	if (!(alienFileTmpl instanceof io)) {
+		var enchanted = this.isEnchantedValue (alienFileTmpl);
+		if (enchanted) {
+			var realAlienFileTmpl = enchanted.interpolated (this.config);
+			if (realAlienFileTmpl)
+				alienFileTmpl = realAlienFileTmpl;
+		}
+
 		alienFileTmpl = new io (alienFileTmpl);
 	}
 
@@ -272,39 +310,45 @@ ConfFuIO.prototype.analyzeAlien = function (alienFileTmpl, alienFile, cb) {
 	alienFileTmpl.readFile (function (err, data) {
 		if (err) {
 			self.emit ('error', 'alien', 'file', err, alienFileTmpl.path);
+			self.ioWait --;
+			cb && cb (err);
 			return;
 		}
 
 		// TODO: stream parser
 		var value = data.toString();
 
-		// TODO: remove copy-paste
-		var variableReg   = /<((\$)((int|quoted|bool)(\(([^\)]*)\))?:)?([^>=]+)(=([^>]*))?)>/gi;
-		var marks = {start: '<', end: '>', typeRaw: '$', typeSafe: '🐸'};
-		var toInterpolate = value.replace (variableReg, "<$$$7>");
-		var interpolated, error;
-		try {
-			interpolated = ConfFuIO.interpolate (toInterpolate, self.config, marks, true);
-		} catch (e) {
-			error = e;
-			self.emit ('error', 'alien', 'variables', e);
-			self.setVariables (e, true);
-			// TODO: emit something if cb is undefined?
-			self.ioWait --;
-			cb && cb (error, interpolated);
+		var enchanted = self.isEnchantedValue (value);
+		if (enchanted) {
 
-			return;
-		};
+			var interpolated = enchanted.interpolated (self.config);
+//			console.log ('ALIEN INTERPOLATE', interpolated === undefined, enchanted.asVariables);
+			if (interpolated === undefined) {
+//				console.log ('ALIEN INTERPOLATE ERROR');
+				self.emit ('error', 'alien', 'variables', enchanted.asVariables);
+				self.setVariables (enchanted.asVariables, true);
+				// TODO: emit something if cb is undefined?
+				self.ioWait --;
+				cb && cb (enchanted.error, interpolated);
+				return;
+			}
+		}
 
 		if (alienFile === false || alienFile === null) {
+			// WTF: use case?
 			// TODO: emit something if cb is undefined?
 			self.ioWait --;
 			cb && cb (error, interpolated);
-
 			return;
 		} else if ((alienFile === true || alienFile === undefined) && alienFileTmpl.extension === self.alienExt) {
 			alienFile = new io (alienFileTmpl.path.slice (0, -1 * (self.alienExt.length + 1)));
 		} else if (!(alienFile instanceof io)) { // assumed string path
+			var enchanted = self.isEnchantedValue (alienFile);
+			if (enchanted) {
+				var realAlienFile = enchanted.interpolated (self.config);
+				if (realAlienFile)
+					alienFile = realAlienFile;
+			}
 			alienFile = new io (alienFile);
 		}
 
