@@ -227,4 +227,10 @@ for (var k in ConfFu) {
 	ConfFuCLI[k] = ConfFu[k];
 }
 
+// Gracefully close log
+process.on('uncaughtException', function (e) {
+	// TODO: need to close all filehandles
+	console.log ('uncaught exception', e);
+});
+
 module.exports = ConfFuCLI;
