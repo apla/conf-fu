@@ -1,4 +1,13 @@
-module.exports = {
+(function(mod) {
+	if (typeof exports == "object" && typeof module == "object") // CommonJS
+		module.exports = mod();
+	else if (typeof define == "function" && define.amd) // AMD
+		return define([], mod);
+	else // Plain browser env
+		this.ConfFuFormats = mod();
+})(function() {
+
+return {
 	json: {
 		type: "json",
 		parse: function (configData) {
@@ -59,3 +68,4 @@ module.exports = {
 		}
 	}
 }
+});

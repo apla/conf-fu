@@ -1,4 +1,17 @@
-module.exports = {
+(function(mod) {
+	if (typeof exports == "object" && typeof module == "object") // CommonJS
+		module.exports = mod();
+	else if (typeof define == "function" && define.amd) // AMD
+		return define([], mod);
+	else // Plain browser env
+		this.ConfFuTypes = mod();
+})(function() {
+
+function incompatibleType (type) {
+
+}
+
+return {
 	incompatibleType: incompatibleType,
 	int: function (meta, value) {
 		if (value !== undefined && value.constructor !== Number)
@@ -50,3 +63,5 @@ module.exports = {
 		return value;
 	}
 }
+
+});

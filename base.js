@@ -1,3 +1,12 @@
+(function(mod) {
+	if (typeof exports == "object" && typeof module == "object") // CommonJS
+		module.exports = mod();
+	else if (typeof define == "function" && define.amd) // AMD
+		return define([], mod);
+	else // Plain browser env
+		this.ConfFu = mod();
+})(function() {
+
 var ConfFu = function (options) {
 	if (!options || !options.config) {
 		throw "no options defined, please supply config and fixup";
@@ -15,11 +24,19 @@ var ConfFu = function (options) {
 	this.ready = this.applyFixup ();
 };
 
-ConfFu.prototype.formats = require ('./formats');
+if (typeof window !== "undefined" && window["ConfFuFormats"] && window["ConfFuTypes"]) {
 
-ConfFu.prototype.types = require ('./types');
+	ConfFu.prototype.formats = window["ConfFuFormats"];
+	ConfFu.prototype.types = window["ConfFuTypes"];
 
-module.exports = ConfFu;
+} else {
+
+	ConfFu.prototype.formats = require ('./formats');
+	ConfFu.prototype.types = require ('./types');
+}
+
+
+// module.exports = ConfFu;
 
 var jqextend = function () {
 	var hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -476,3 +493,7 @@ ConfFu.prototype.isEnchantedValue = function (value, _marks) {
 		return {"include": check[1]};
 	}
 };
+
+return ConfFu;
+
+});
