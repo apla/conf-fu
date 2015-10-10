@@ -1,7 +1,8 @@
 module.exports = {
+	incompatibleType: incompatibleType,
 	int: function (meta, value) {
 		if (value !== undefined && value.constructor !== Number)
-			throw new Error ('not a number');
+			return incompatibleType;
 		if (value === undefined && meta.default !== undefined)
 			value = meta.default;
 		return value;
@@ -21,7 +22,7 @@ module.exports = {
 				} else {
 					var m = def.match (new RegExp ("^"+meta.typeArgs.replace (/[\|,:]/, ")|("+")$", "i")));
 					if (!m)
-						throw new Error (def + "is not a bool");
+						return incompatibleType;
 					if (m[1] !== undefined) {
 						value = true;
 					} else if (m[2] !== undefined) {
@@ -31,7 +32,7 @@ module.exports = {
 			}
 		} else {
 			if (value.constructor !== Boolean)
-				throw new Error ('not a bool');
+				return incompatibleType;
 		}
 		if (presentation)
 			return presentation.reverse()[value*1];
@@ -39,7 +40,7 @@ module.exports = {
 	},
 	string: function (meta, value) {
 		if (value !== undefined && value.constructor !== String)
-			throw new Error ('not a string');
+			return incompatibleType;
 		if (value === undefined && meta.default !== undefined)
 			value = meta.default;
 		// TODO: add a string quote, test already in 03-expand

@@ -128,12 +128,12 @@ function isEmpty(obj) {
 	);
 }
 
-var pathToVal = module.exports.pathToVal = function (dict, path, value, method) {
+var pathToVal = ConfFu.pathToVal = function (dict, path, value, method) {
 	var chunks = 'string' == typeof path ? path.split('.') : path;
 	var chunk = chunks[0];
 	var rest = chunks.slice(1);
+	var oldValue = dict[chunk];
 	if (chunks.length == 1) {
-		var oldValue = dict[chunk];
 		if (value !== undefined) {
 			if (method !== undefined) {
 				method(value, dict, chunk);
@@ -142,6 +142,8 @@ var pathToVal = module.exports.pathToVal = function (dict, path, value, method) 
 			}
 		}
 		return oldValue;
+	} else if (oldValue === undefined) {
+		return;
 	}
 	return pathToVal(dict[chunk], rest, value, method);
 };
@@ -433,28 +435,33 @@ ConfFu.prototype.isEnchantedValue = function (value, _marks) {
 		result.interpolated = function (dictionary) {
 			delete result.error;
 
-			try {
 				var toConcat = [];
 				for (var k = 0; k < result.length; k++) {
 					var theVar = result[k];
 					if (theVar.before)
 						toConcat.push (theVar.before);
 					var interpolatedVar = pathToVal (dictionary, theVar.variable);
-					if (self.types[theVar.type])
+					if (self.types[theVar.type]) {
 						interpolatedVar = self.types[theVar.type] (theVar, interpolatedVar);
-					if (interpolatedVar === undefined)
-						throw theVar.variable+' is not defined';
+						if (interpolatedVar === self.types.incompatibleType) {
+							result.error = theVar.variable+' type ('+theVar.type+') is incompatible with value ' + interpolatedVar;
+							return;
+						}
+					}
+					if (interpolatedVar === undefined) {
+						result.error = theVar.variable+' is not defined';
+						return;
+					}
 					toConcat.push (interpolatedVar);
 				}
+
 				if (after)
 					toConcat.push (after);
+
 				if (toConcat.length === 1)
 					return toConcat[0];
+
 				return toConcat.join ("");
-			} catch (e) {
-				result.error = e;
-				return undefined;
-			}
 		}
 		return result;
 	}
