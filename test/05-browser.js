@@ -41,7 +41,10 @@ describe (baseName+" launch base.js with config", function () {
 
 	it ("with variables should return variables", function () {
 		var config = new confFu ({
-			config: {a: {b: {c: "<$x>"}}, x: true}
+			config: {
+				a: {b: {c: "<$x>"}},
+				x: true
+			}
 		});
 
 		config.verbose = globalVerbose || false;

@@ -132,7 +132,7 @@ var is = function (type, obj) {
 	return type == typeOf(obj);
 };
 
-function isEmpty(obj) {
+ConfFu.isEmpty = function isEmpty(obj) {
 	var type = typeOf(obj);
 	return (
 		('Undefined' == type)                              ||
@@ -208,10 +208,7 @@ var interpolate = ConfFu.interpolate = function (str, dict, marks, mustThrow) {
 	var replacedStr = str.replace(re, function (_, varType, varPath) {
 		var value;
 		if (varPath.indexOf(marks.path) > -1) {
-			try {
-				value = pathToVal(dict, varPath);
-			} catch (e) {
-			}
+			value = pathToVal(dict, varPath);
 		} else {
 			value = dict[varPath];
 		}

@@ -1,7 +1,7 @@
 {
 	"name": "conf-fu",
 	"description": "Advanced configuration with includes, variables and placeholders.",
-	"version": "0.5.4",
+	"version": "0.5.5",
 	"keywords": [
 		"configuration",
 		"settings"
@@ -15,9 +15,6 @@
 	},
 	"peerDependencies": {
 		"yargs": "*"
-	},
-	"devDependencies": {
-		"mocha": "*"
 	},
 	"engines": {
 		"node": ">=0.8.0",
@@ -34,6 +31,9 @@
 	"optionalDependencies": {},
 	"_engineSupported": true,
 	"_defaultsLoaded": true,
+	"devDependencies": {
+		"mocha": "*"
+	},
 	"scripts": {
 		"test": "/usr/bin/env mocha --reporter list"
 	},

@@ -13,12 +13,10 @@ var formats  = require ('./formats');
  */
 
 function io () {
-	try {
-		fsObject.apply (this, arguments);
-		this.appendFormat();
-	} catch (e) {
-		this.error = e;
-	}
+	https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#32-leaking-arguments
+	var $_len = arguments.length;var args = new Array($_len); for(var $_i = 0; $_i < $_len; ++$_i) {args[$_i] = arguments[$_i];}
+	fsObject.apply (this, args);
+	this.appendFormat();
 }
 
 io.prototype = Object.create(fsObject.prototype);

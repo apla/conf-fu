@@ -11,8 +11,8 @@ return {
 	json: {
 		type: "json",
 		parse: function (configData) {
+			var string = configData.toString();
 			try {
-				var string = configData.toString();
 				var config = JSON.parse (string);
 				return {object: config};
 			} catch (e) {
