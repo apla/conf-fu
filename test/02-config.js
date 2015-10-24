@@ -72,6 +72,7 @@ describe (baseName+" loading config", function () {
 		});
 		config.on ('error', function (eOrigin, eType, eData, eFile) {
 			if (eType === 'variables') {
+				setTimeout (function () {
 				fs.stat (path.join (configDir, 'not-found.json'), function (err, stats) {
 					if (!err) {
 						// this file must be created
@@ -80,6 +81,7 @@ describe (baseName+" loading config", function () {
 					}
 					assert (false, 'filesystem not fast enough to create this file, we must wrap around this case');
 				});
+				}, 100);
 			} else if (eType === 'file' && eOrigin === 'fixup') {
 				// that's ok, because we create fixup in case of his abscence
 			} else {
