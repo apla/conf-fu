@@ -120,11 +120,14 @@ function ConfFuIO (options) {
 
 	this.on ('error', this.errorHandler.bind (this));
 
-	this.configFile   = new io (options.configFile);
+	if (options.projectRoot)
+		this.projectRoot  = new io (options.projectRoot);
 
 	if (options.configRoot) {
 		this.configRoot = new io (options.configRoot);
+		this.configFile = new io (this.getFilePath (process.cwd(), options.configFile));
 	} else {
+		this.configFile = new io (options.configFile);
 		this.configRoot = this.configFile.parent();
 	}
 
@@ -132,19 +135,18 @@ function ConfFuIO (options) {
 
 	this.instance     = options.instance;
 	if (options.instanceFile)
-		this.instanceFile = new io (options.instanceFile);
+		this.instanceFile = new io (this.getFilePath (process.cwd(), options.instanceFile));
 
-	if (options.configRoot) {
-		this.instanceFile = new io (options.instanceFile);
-	}
-	if (options.projectRoot)
-		this.projectRoot  = new io (options.projectRoot);
+	//if (options.configRoot) { /// WTF???
+	//	this.instanceFile = new io (options.instanceFile);
+	//}
 
 	if (options.alienFiles)
 		this.alienFiles  = options.alienFiles;
 
-	var fixupFile = options.fixupFile;
-	if (fixupFile) {
+
+	if (options.fixupFile) {
+		var fixupFile = this.getFilePath (process.cwd(), options.fixupFile);
 		this.fixupEnchantment;
 		if (this.fixupEnchantment = this.isEnchantedValue (fixupFile)) {
 			// TODO: check and die when another variables is present
@@ -428,9 +430,11 @@ ConfFuIO.prototype.onInstanceRead = function (err, data) {
 
 	this.instance = data.toString().trim();
 
-	var fixupFile = this.fixupEnchantment.interpolated ({
-		instance: this.instance
-	});
+	var fixupFile;
+	if (this.fixupEnchantment)
+		fixupFile = this.fixupEnchantment.interpolated ({
+			instance: this.instance
+		});
 
 	if (fixupFile) {
 		this.fixupFile = new io (fixupFile);
@@ -489,11 +493,10 @@ ConfFuIO.prototype.readInstance = function () {
 };
 
 ConfFuIO.prototype.setVariables = function (fixupVars, force) {
-	var self = this;
 	// ensure fixup is defined
 	// TODO: migration from instance-based
 
-	self.super_.prototype.setVariables.apply (self, arguments);
+	this.super_.prototype.setVariables.apply (this, arguments);
 
 	if (this.fixupFile) {
 		// TODO: create fixup directory or display message for user
@@ -504,13 +507,13 @@ ConfFuIO.prototype.setVariables = function (fixupVars, force) {
 			validFixupString = this.fixupFile.stringify (this.fixup);
 
 		if (validFixupString) {
-			self.ioWait ++;
+			this.ioWait ++;
 			this.fixupFile.writeFile (validFixupString, function (err) {
 				if (err) {
 					console.error (paint.confFu(), 'write error for ', paint.path (this.fixupFile.path), ':', err);
 				}
-				self.ioWait --;
-			});
+				this.ioWait --;
+			}.bind (this));
 		}
 	} else {
 		console.error (paint.confFu(), 'fixup file name is undefined, cannot write to the fixup file');
@@ -750,20 +753,19 @@ ConfFuIO.prototype.getFilePath = function (baseDir, pathTemplate) {
 
 	// here you can use some options to define include location:
 	// 1. relative path (with . or ..)
-	if (pathTemplate.match (/\.+(\/|\\)/)) {
+	if (pathTemplate.match (/^\.+(\/|\\)/)) {
 		pathTemplate = path.resolve (baseDir, pathTemplate);
 
 	// 2. absolute path
 	} else if (path.resolve (pathTemplate) === pathTemplate) {
 		// nothing to do
 
-	// 3. configRoot, prefixed with 'config:' or without prefix
+	// 3. projectRoot, prefixed with 'project:'
 	} else if (pathTemplate.indexOf ('project:') === 0) {
 		pathTemplate = path.join (this.projectRoot.path, pathTemplate.substr (8));
 
-	// 4. projectRoot, prefixed with 'project:'
+	// 4. configRoot, prefixed with 'config:' or without prefix
 	} else {
-
 		pathTemplate = path.join (
 			this.configRoot.path,
 			pathTemplate.indexOf ('config:') === 0 ? pathTemplate.substr (7) : pathTemplate

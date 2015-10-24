@@ -213,7 +213,7 @@ var interpolate = ConfFu.interpolate = function (str, dict, marks, mustThrow) {
 			value = dict[varPath];
 		}
 
-		if (isEmpty(value) && varType == marks.typeSafe) {
+		if (ConfFu.isEmpty(value) && varType == marks.typeSafe) {
 			value = undefined;
 		}
 
