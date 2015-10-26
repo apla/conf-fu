@@ -1,7 +1,7 @@
 {
 	"name": "conf-fu",
 	"description": "Advanced configuration with includes, variables and placeholders.",
-	"version": "0.5.5",
+	"version": "0.5.6",
 	"keywords": [
 		"configuration",
 		"settings"

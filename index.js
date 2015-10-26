@@ -144,7 +144,7 @@ function ConfFuIO (options) {
 			: options.configRoot
 		);
 		if (options.configFile) this.configFile = new io (this.getFilePath (process.cwd(), options.configFile));
-		if (options.configName) this.configName = options.configName;
+		if (options.configName) this.configName = new io (this.getFilePath (process.cwd(), options.configName));
 	} else {
 		// TODO: configName not supported if configRoot undefined
 		this.configFile = new io (options.configFile);
@@ -183,7 +183,8 @@ ConfFuIO.paint = paint;
 
 ConfFuIO.prototype.loadAll = function (fixupFile, fixupName) {
 	this.findConfigFile ();
-	this.findFixupFile (fixupFile, fixupName);
+	this.findFixupFile = this._findFixupFile.bind (this, fixupFile, fixupName);
+	this.findFixupFile ();
 	if (this.instanceFile)
 		this.instanceFile.readFile (this.onInstanceRead.bind (this));
 };
@@ -429,17 +430,19 @@ ConfFuIO.prototype.findConfigFile = function (done) {
 	if (this.configFile) {
 		this.configFile.readAndParseFile (this.onConfigRead.bind (this));
 	} else if (this.configName) {
-		this.searchForFile (this.configName, this.configRoot, function (fileName) {
+
+		this.searchForFile (this.configName.onlyName, this.configName.parent(), function (fileName) {
 			this.configFile = new io (this.getFilePath (process.cwd(), fileName));
 			this.configFile.readAndParseFile (this.onConfigRead.bind (this));
 		}.bind (this));
 	};
 }
 
-ConfFuIO.prototype.findFixupFile = function (fixupFile, fixupName) {
+ConfFuIO.prototype._findFixupFile = function (fixupFile, fixupName) {
+	if (this.fixupFile) return;
+
 	if (fixupFile) {
 		var ff = this.getFilePath (process.cwd(), fixupFile);
-		this.fixupEnchantment;
 		if (this.fixupEnchantment = this.isEnchantedValue (ff)) {
 			// TODO: check and die when another variables is present
 			if (this.instance) {
@@ -455,7 +458,20 @@ ConfFuIO.prototype.findFixupFile = function (fixupFile, fixupName) {
 		if (this.fixupFile)
 			this.fixupFile.readAndParseFile (this.onFixupRead.bind (this));
 	} else if (fixupName) {
-		this.searchForFile (fixupName, this.configRoot, this.findFixupFile.bind (this));
+		var ff = this.getFilePath (process.cwd(), fixupName);
+		var enchanted = this.isEnchantedValue (ff);
+		var ffIO = new io (ff);
+		if (!enchanted) {
+			this.searchForFile (ffIO.onlyName, ffIO.parent(), this._findFixupFile.bind (this));
+		} else if (this.instance) {
+			ff = enchanted.interpolated ({
+				instance: this.instance
+			});
+			if (ff) {
+				ffIO = new io (ff);
+				this.searchForFile (ffIO.onlyName, ffIO.parent(), this._findFixupFile.bind (this));
+			}
+		}
 	}
 }
 
@@ -478,16 +494,7 @@ ConfFuIO.prototype.onInstanceRead = function (err, data) {
 
 	this.instance = data.toString().trim();
 
-	var fixupFile;
-	if (this.fixupEnchantment)
-		fixupFile = this.fixupEnchantment.interpolated ({
-			instance: this.instance
-		});
-
-	if (fixupFile) {
-		this.fixupFile = new io (fixupFile);
-		this.fixupFile.readAndParseFile (this.onFixupRead.bind (this));
-	}
+	this.findFixupFile ();
 }
 
 ConfFuIO.prototype.readInstance = function () {
