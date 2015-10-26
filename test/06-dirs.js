@@ -86,6 +86,26 @@ describe (baseName+" loading config with dirs", function () {
 		});
 	});
 
+	it ("should find 'configName' and 'fixupName' with one of the supported extensions within 'configDir' with instance 2", function (done) {
+		var config = new confFu ({
+			configName: 'include',
+			configRoot: '02-config',
+			projectRoot: 'test',
+			instanceFile: "instance-xxx",
+			fixupName:  '<$instance>/override'
+		});
+
+		config.verbose = globalVerbose || false;
+
+		config.on ('ready', function () {
+			done();
+		});
+		config.on ('error', function (eOrigin, eType, eData, eFile) {
+			console.log (config.configFile, config.fixupFile);
+			assert (false, 'wrong config');
+		});
+	});
+
 	/*
 	it ("and no fixup should return variables", function (done) {
 		var config = new confFu ({

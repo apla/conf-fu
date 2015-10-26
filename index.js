@@ -458,19 +458,21 @@ ConfFuIO.prototype._findFixupFile = function (fixupFile, fixupName) {
 		if (this.fixupFile)
 			this.fixupFile.readAndParseFile (this.onFixupRead.bind (this));
 	} else if (fixupName) {
-		var ff = this.getFilePath (process.cwd(), fixupName);
-		var enchanted = this.isEnchantedValue (ff);
-		var ffIO = new io (ff);
+		var enchanted = this.isEnchantedValue (fixupName);
 		if (!enchanted) {
-			this.searchForFile (ffIO.onlyName, ffIO.parent(), this._findFixupFile.bind (this));
+			var fixupIO = new io (this.getFilePath (process.cwd(), fixupName));
+			this.searchForFile (fixupIO.onlyName, fixupIO.parent(), this._findFixupFile.bind (this));
 		} else if (this.instance) {
-			ff = enchanted.interpolated ({
+			var fixupNamePlain = enchanted.interpolated ({
 				instance: this.instance
 			});
-			if (ff) {
-				ffIO = new io (ff);
-				this.searchForFile (ffIO.onlyName, ffIO.parent(), this._findFixupFile.bind (this));
+			if (!fixupNamePlain) {
+				return;
 			}
+			var fixupIO = new io (this.getFilePath (process.cwd(), fixupNamePlain));
+			this.searchForFile (fixupIO.onlyName, fixupIO.parent(), function (fixupFileName) {
+				this._findFixupFile (fixupNamePlain + path.extname (fixupFileName));
+			}.bind (this));
 		}
 	}
 }
