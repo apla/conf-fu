@@ -71,7 +71,7 @@ function ConfFuIO (options) {
 	this.checkList = {
 		coreLoaded:     null,
 		includesLoaded: null,
-		fixupLoaded:    null,
+		fixupLoaded: null,
 		alienRead:      null
 	};
 
@@ -123,10 +123,30 @@ function ConfFuIO (options) {
 	if (options.projectRoot)
 		this.projectRoot  = new io (options.projectRoot);
 
+	if (!options.configFile && !options.configName) {
+		this.emit ('error', 'core', 'file', "you must define 'configFile' or 'configName' option", null);
+		return;
+	}
+
+	if (options.configName && options.configFile) {
+		this.emit ('error', 'core', 'file', "you can use exact name for config file with 'configFile' option, or allow to search file by name with any supported format by using 'configName'", null);
+		return;
+	}
+
+	if (options.fixupName && options.fixupFile) {
+		this.emit ('error', 'fixup', 'file', "you can use exact name for fixup file with 'fixupFile' option, or allow to search file by name with any supported format by using 'fixupName'", null);
+		return;
+	}
+
 	if (options.configRoot) {
-		this.configRoot = new io (options.configRoot);
-		this.configFile = new io (this.getFilePath (process.cwd(), options.configFile));
+		this.configRoot = new io (options.projectRoot
+			? path.join (options.projectRoot, options.configRoot)
+			: options.configRoot
+		);
+		if (options.configFile) this.configFile = new io (this.getFilePath (process.cwd(), options.configFile));
+		if (options.configName) this.configName = options.configName;
 	} else {
+		// TODO: configName not supported if configRoot undefined
 		this.configFile = new io (options.configFile);
 		this.configRoot = this.configFile.parent();
 	}
@@ -144,28 +164,12 @@ function ConfFuIO (options) {
 	if (options.alienFiles)
 		this.alienFiles  = options.alienFiles;
 
-
-	if (options.fixupFile) {
-		var fixupFile = this.getFilePath (process.cwd(), options.fixupFile);
-		this.fixupEnchantment;
-		if (this.fixupEnchantment = this.isEnchantedValue (fixupFile)) {
-			// TODO: check and die when another variables is present
-			if (this.instance) {
-				fixupFile = this.fixupEnchantment.interpolated ({
-					instance: this.instance
-				});
-				if (fixupFile)
-					this.fixupFile = new io (fixupFile);
-			}
-		} else {
-			this.fixupFile = new io (fixupFile);
-		}
-	} else {
+	if (!options.fixupFile && !options.fixupName) {
 		this.emit ('error', 'fixup', 'file', "fixup file name is undefined", null);
 	}
 
 	// TODO: exclusive lock on config file to prevent multiple running scripts
-	process.nextTick (this.loadAll.bind (this));
+	process.nextTick (this.loadAll.bind (this, options.fixupFile, options.fixupName));
 
 }
 
@@ -177,10 +181,9 @@ module.exports = ConfFuIO;
 
 ConfFuIO.paint = paint;
 
-ConfFuIO.prototype.loadAll = function () {
-	this.configFile.readAndParseFile (this.onConfigRead.bind (this));
-	if (this.fixupFile)
-		this.fixupFile.readAndParseFile (this.onFixupRead.bind (this));
+ConfFuIO.prototype.loadAll = function (fixupFile, fixupName) {
+	this.findConfigFile ();
+	this.findFixupFile (fixupFile, fixupName);
 	if (this.instanceFile)
 		this.instanceFile.readFile (this.onInstanceRead.bind (this));
 };
@@ -420,6 +423,51 @@ ConfFuIO.prototype.interpolateAlien = function (alienFileTmpl, alienFile, cb) {
 
 
 	});
+}
+
+ConfFuIO.prototype.findConfigFile = function (done) {
+	if (this.configFile) {
+		this.configFile.readAndParseFile (this.onConfigRead.bind (this));
+	} else if (this.configName) {
+		this.searchForFile (this.configName, this.configRoot, function (fileName) {
+			this.configFile = new io (this.getFilePath (process.cwd(), fileName));
+			this.configFile.readAndParseFile (this.onConfigRead.bind (this));
+		}.bind (this));
+	};
+}
+
+ConfFuIO.prototype.findFixupFile = function (fixupFile, fixupName) {
+	if (fixupFile) {
+		var ff = this.getFilePath (process.cwd(), fixupFile);
+		this.fixupEnchantment;
+		if (this.fixupEnchantment = this.isEnchantedValue (ff)) {
+			// TODO: check and die when another variables is present
+			if (this.instance) {
+				ff = this.fixupEnchantment.interpolated ({
+					instance: this.instance
+				});
+				if (ff)
+					this.fixupFile = new io (ff);
+			}
+		} else {
+			this.fixupFile = new io (ff);
+		}
+		if (this.fixupFile)
+			this.fixupFile.readAndParseFile (this.onFixupRead.bind (this));
+	} else if (fixupName) {
+		this.searchForFile (fixupName, this.configRoot, this.findFixupFile.bind (this));
+	}
+}
+
+ConfFuIO.prototype.searchForFile = function (name, dir, done) {
+	fs.readdir (dir.path, function (err, files) {
+		for (var fNo = 0; fNo < files.length; fNo ++) {
+			if (path.basename (files[fNo], path.extname (files[fNo])) === name) {
+				done (files[fNo]);
+				break;
+			}
+		}
+	}.bind (this));
 }
 
 ConfFuIO.prototype.onInstanceRead = function (err, data) {
