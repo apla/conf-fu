@@ -315,7 +315,7 @@ ConfFu.prototype.interpolateVars = function (error) {
 
 	this.setVariables (allVars);
 
-	if (!this.variables) return;
+	if (!unpopulatedVars) return;
 
 	if (Object.keys(unpopulatedVars).length) {
 		return;
