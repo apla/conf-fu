@@ -681,7 +681,18 @@ ConfFuIO.prototype.logVariables = function() {
 		var value = (this.variables[varPath] && this.variables[varPath].constructor === Array)
 			? this.variables[varPath][1]
 			: this.variables[varPath];
-		console.log ("\t", paint.path(varPath), '=', value);
+		var enchanted = this.isEnchantedValue (this.variables[varPath][0]);
+		var logEnchanted = [];
+		if ('placeholder' in enchanted) {
+			logEnchanted.push ('placeholder: ' + enchanted.placeholder);
+		}
+		if ('default' in enchanted) {
+			logEnchanted.push ('default: ' + enchanted.placeholder);
+		}
+		if ('variable' in enchanted) {
+			logEnchanted.push ('referencing: ' + [].slice.apply (enchanted).map (function (ref) {return ref.variable}).join (", "));
+		}
+		console.log ("\t", paint.path(varPath), '=', paint.yellow (value === undefined ? "undefined" : value), '(' + logEnchanted.join ("; ") + ')');
 //		this.variables[varPath] = value || "<#undefined>";
 	}
 };
