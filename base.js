@@ -315,6 +315,8 @@ ConfFu.prototype.interpolateVars = function (error) {
 
 	this.setVariables (allVars);
 
+	if (!this.variables) return;
+
 	if (Object.keys(unpopulatedVars).length) {
 		return;
 	}
@@ -324,6 +326,7 @@ ConfFu.prototype.interpolateVars = function (error) {
 
 ConfFu.prototype.unpopulatedVariables = function (fixupVars, force) {
 	var unpopulatedVars = {};
+	if (!this.variables) return;
 	var varNames = Object.keys (this.variables);
 	var self = this;
 	varNames.forEach (function (varName) {

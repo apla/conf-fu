@@ -106,6 +106,27 @@ describe (baseName+" loading config with dirs", function () {
 		});
 	});
 
+	it ("must emit proper message if can't find config file by name", function (done) {
+		var config = new confFu ({
+			configName: 'aaa',
+			configRoot: '02-config',
+			projectRoot: 'test',
+			instanceFile: "instance-xxx",
+			fixupName:  '<$instance>/override'
+		});
+
+		config.verbose = globalVerbose || false;
+
+		config.on ('notReady', function () {
+			done();
+		});
+		config.on ('error', function (eOrigin, eType, eData, eFile) {
+			// console.log (config.configFile, config.fixupFile);
+			// assert (false, 'wrong config');
+		});
+	});
+
+
 	/*
 	it ("and no fixup should return variables", function (done) {
 		var config = new confFu ({

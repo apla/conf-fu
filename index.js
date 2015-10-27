@@ -120,6 +120,8 @@ function ConfFuIO (options) {
 
 	this.on ('error', this.errorHandler.bind (this));
 
+	this.defaultExtension = options.defaultExtension || "json";
+
 	if (options.projectRoot)
 		this.projectRoot  = new io (options.projectRoot);
 
@@ -431,7 +433,11 @@ ConfFuIO.prototype.findConfigFile = function (done) {
 		this.configFile.readAndParseFile (this.onConfigRead.bind (this));
 	} else if (this.configName) {
 
-		this.searchForFile (this.configName.onlyName, this.configName.parent(), function (fileName) {
+		this.searchForFile (this.configName.onlyName, this.configName.parent(), function (err, fileName) {
+			if (err) {
+				this.emit ('error', 'core', 'file', 'core config file is unaccessible', err);
+				return;
+			}
 			this.configFile = new io (this.getFilePath (process.cwd(), fileName));
 			this.configFile.readAndParseFile (this.onConfigRead.bind (this));
 		}.bind (this));
@@ -455,13 +461,20 @@ ConfFuIO.prototype._findFixupFile = function (fixupFile, fixupName) {
 		} else {
 			this.fixupFile = new io (ff);
 		}
+
 		if (this.fixupFile)
 			this.fixupFile.readAndParseFile (this.onFixupRead.bind (this));
 	} else if (fixupName) {
 		var enchanted = this.isEnchantedValue (fixupName);
 		if (!enchanted) {
 			var fixupIO = new io (this.getFilePath (process.cwd(), fixupName));
-			this.searchForFile (fixupIO.onlyName, fixupIO.parent(), this._findFixupFile.bind (this));
+			this.searchForFile (fixupIO.onlyName, fixupIO.parent(), function (err, fixupFileName) {
+				if (err && err !== "noMatchForName") {
+					this.onFixupRead (err);
+					return;
+				}
+				this._findFixupFile (fixupName + path.extname (fixupFileName));
+			}.bind (this));
 		} else if (this.instance) {
 			var fixupNamePlain = enchanted.interpolated ({
 				instance: this.instance
@@ -470,7 +483,11 @@ ConfFuIO.prototype._findFixupFile = function (fixupFile, fixupName) {
 				return;
 			}
 			var fixupIO = new io (this.getFilePath (process.cwd(), fixupNamePlain));
-			this.searchForFile (fixupIO.onlyName, fixupIO.parent(), function (fixupFileName) {
+			this.searchForFile (fixupIO.onlyName, fixupIO.parent(), function (err, fixupFileName) {
+				if (err && err !== "noMatchForName") {
+					this.onFixupRead (err);
+					return;
+				}
 				this._findFixupFile (fixupNamePlain + path.extname (fixupFileName));
 			}.bind (this));
 		}
@@ -479,18 +496,20 @@ ConfFuIO.prototype._findFixupFile = function (fixupFile, fixupName) {
 
 ConfFuIO.prototype.searchForFile = function (name, dir, done) {
 	fs.readdir (dir.path, function (err, files) {
+		if (err) return done (err);
 		for (var fNo = 0; fNo < files.length; fNo ++) {
 			if (path.basename (files[fNo], path.extname (files[fNo])) === name) {
-				done (files[fNo]);
-				break;
+				return done (null, files[fNo]);
 			}
 		}
+		return done ("noMatchForName", name + '.' + this.defaultExtension);
 	}.bind (this));
 }
 
 ConfFuIO.prototype.onInstanceRead = function (err, data) {
 	if (err) {
 		this.emit ('error', 'instance', 'file', err, this.instanceFile.path);
+		this.onFixupRead (true); // with instance we decide which fixup to use
 		return;
 	}
 
@@ -573,7 +592,7 @@ ConfFuIO.prototype.setVariables = function (fixupVars, force) {
 			}.bind (this));
 		}
 	} else {
-		console.error (paint.confFu(), 'fixup file name is undefined, cannot write to the fixup file');
+		if (this.verbose) console.error (paint.confFu(), 'fixup file name is undefined, cannot write to the fixup file');
 		if (Object.keys (fixupVars).length) {
 
 //			process.kill ();
@@ -609,13 +628,13 @@ ConfFuIO.prototype.onConfigRead = function (err, data, parsed) {
 
 	if (err) {
 		var message = "can't access '" + this.configFile.shortPath() + "' file ("+err.code+")";
-		console.error (paint.confFu(), paint.error (message));
+		if (this.verbose) console.error (paint.confFu(), paint.error (message));
 		this.emit ('error', 'core', 'file', err, this.configFile);
 		return;
 	}
 	if (!parsed || parsed.error) {
 		var message = "cannot parse '" + this.configFile.shortPath() + "' file";
-		console.error (paint.confFu(), paint.error (message));
+		if (this.verbose) console.error (paint.confFu(), paint.error (message));
 		this.emit ('error', 'core', 'parse', (parsed ? parsed.error : null), this.configFile);
 		return;
 	}
@@ -648,7 +667,7 @@ ConfFuIO.prototype.onConfigRead = function (err, data, parsed) {
 var configCache = {};
 
 ConfFuIO.prototype.logVariables = function() {
-	console.log (paint.confFu (), 'variables:');
+	if (this.verbose) console.log (paint.confFu (), 'variables:');
 	for (var varPath in this.setupVariables) {
 		var prefix = '[setup]';
 		// TODO: show overriden values
