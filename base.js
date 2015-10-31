@@ -24,15 +24,17 @@ var ConfFu = function (options) {
 	this.ready = this.applyFixup ();
 };
 
-if (typeof window !== "undefined" && window["ConfFuFormats"] && window["ConfFuTypes"]) {
+	if (typeof window !== "undefined" && window["ConfFuFormats"] && window["ConfFuTypes"] && window["ConfFuOperations"]) {
 
-	ConfFu.prototype.formats = window["ConfFuFormats"];
-	ConfFu.prototype.types = window["ConfFuTypes"];
+	ConfFu.prototype.formats    = window["ConfFuFormats"];
+	ConfFu.prototype.types      = window["ConfFuTypes"];
+	ConfFu.prototype.operations = window["ConfFuOperations"];
 
 } else {
 
-	ConfFu.prototype.formats = require ('./formats');
-	ConfFu.prototype.types = require ('./types');
+	ConfFu.prototype.formats    = require ('./formats');
+	ConfFu.prototype.types      = require ('./types');
+	ConfFu.prototype.operations = require ('./operations');
 }
 
 
@@ -389,30 +391,64 @@ ConfFu.prototype.iterateTree = function iterateTree (tree, cb, depth) {
 	}
 };
 
+function interpolated (types, operations, dictionary) {
+	var result = this;
 
-ConfFu.prototype.isEnchantedValue = function (value, marksOverride, types) {
+	delete result.error;
+
+	var toConcat = [];
+	for (var k = 0; k < result.length; k++) {
+		var theVar = result[k];
+		if (theVar.before)
+			toConcat.push (theVar.before);
+		var interpolatedVar = pathToVal (dictionary, theVar.variable);
+		if (types[theVar.type]) {
+			interpolatedVar = types[theVar.type] (theVar, interpolatedVar);
+			if (interpolatedVar === types.incompatibleType) {
+				result.error = theVar.variable+' type ('+theVar.type+') is incompatible with value ' + interpolatedVar;
+				return;
+			}
+		}
+		// interpolatedVar = operations[theVar.operation] (interpolatedVar);
+		if (interpolatedVar === undefined) {
+			result.error = theVar.variable+' is not defined';
+			return;
+		}
+		toConcat.push (interpolatedVar);
+	}
+
+	if (result.after)
+		toConcat.push (result.after);
+
+	if (toConcat.length === 1)
+		return toConcat[0];
+
+	return toConcat.join ("");
+}
+
+
+ConfFu.prototype.isEnchantedValue = function (value, marksOverride, types, operations) {
 
 	var marks = {
 		start: '<',
 		end: '>',
 		path: '.',
-		safe: '$',
-		raw: '*',
 		placeholder: '#'
 	};
 	marksOverride = marksOverride || this.marks || {};
 	extend (marks, marksOverride);
 
 	types = types || this.types || {};
+	operations = operations || this.operations || {"*": function (value) {return value}};
 
 	var vartypesRe = Object.keys (types).join ("|") || "\\w+";
 	var variableReg = new RegExp (
 		marks.start
-		+"((["+marks.safe+marks.raw+"])(("+vartypesRe+")(\\(([^\)]*)\\))?:)?([^"+marks.end+"=]+)(=([^"+marks.end+"]*))?)"
+		+"(["+Object.keys (operations)+"])((("+vartypesRe+")(\\(([^\)]*)\\))?:)?([^"+marks.end+"=]+)(=([^"+marks.end+"]*))?)"
 		+marks.end,
 	"ig");
 	var placeholderRe = new RegExp ("^"+marks.start+"((\#)((optional|default):)?([^"+marks.end+"]+))"+marks.end+"$", "i");
-	var includeRe     = /^<<([^<>]+)>>$/i;
+	var includeRe     = new RegExp ("^"+marks.start+"<([^<>]+)>"+marks.end+"$", "i");
 
 	var self = this;
 
@@ -434,12 +470,13 @@ ConfFu.prototype.isEnchantedValue = function (value, marksOverride, types) {
 		);
 		lastIdx = variableReg.lastIndex;
 		result[result.length] = {
-			variable: matchData[7],
-			type:     matchData[4],
-			typeArgs: matchData[6],
-			default:  matchData[9],
-			lastIdx:  variableReg.lastIndex,
-			before:   before
+			operation: matchData[1],
+			variable:  matchData[7],
+			type:      matchData[4],
+			typeArgs:  matchData[6],
+			default:   matchData[9],
+			lastIdx:   variableReg.lastIndex,
+			before:    before
 		};
 		result.asVariables[matchData[7]] = [];
 		result.variable = true;
@@ -447,41 +484,12 @@ ConfFu.prototype.isEnchantedValue = function (value, marksOverride, types) {
 	}
 
 	if (result && result.length) {
-		var after = (value.length === lastIdx + 1) ? null : value.substring (lastIdx);
-		result.interpolated = function (dictionary) {
-			delete result.error;
-
-				var toConcat = [];
-				for (var k = 0; k < result.length; k++) {
-					var theVar = result[k];
-					if (theVar.before)
-						toConcat.push (theVar.before);
-					var interpolatedVar = pathToVal (dictionary, theVar.variable);
-					if (types[theVar.type]) {
-						interpolatedVar = types[theVar.type] (theVar, interpolatedVar);
-						if (interpolatedVar === types.incompatibleType) {
-							result.error = theVar.variable+' type ('+theVar.type+') is incompatible with value ' + interpolatedVar;
-							return;
-						}
-					}
-					if (interpolatedVar === undefined) {
-						result.error = theVar.variable+' is not defined';
-						return;
-					}
-					toConcat.push (interpolatedVar);
-				}
-
-				if (after)
-					toConcat.push (after);
-
-				if (toConcat.length === 1)
-					return toConcat[0];
-
-				return toConcat.join ("");
-		}
+		result.after = (value.length === lastIdx + 1) ? null : value.substring (lastIdx);
+		result.interpolated = interpolated.bind (result, types, operations);
 		return result;
 	}
 
+	var check;
 	if (check = value.match (placeholderRe)) {
 		result = {"placeholder": check[5]};
 		if (check[4]) {

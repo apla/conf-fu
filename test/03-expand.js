@@ -48,7 +48,7 @@ describe (baseName+" parse string", function () {
 	var customMarks = {start: "{{", end: "}}"};
 
 	it ("with include enchantment and custom marks", function () {
-		var enchanted = confFu.prototype.isEnchantedValue ("{{{include}}}", customMarks);
+		var enchanted = confFu.prototype.isEnchantedValue ("{{<include>}}", customMarks);
 		return "include" in enchanted;
 	});
 	it ("with variable enchantment and custom marks", function () {
@@ -154,6 +154,7 @@ describe (baseName+" format string", function () {
 		return "variable" in enchanted;
 	});
 	it ("custom marks", function () {
+		confFu.prototype.operations["&"] = function (value) {return value;}
 		var enchanted = confFu.prototype.isEnchantedValue (
 			"{{&string(\"\"):http_domain}}", {
 				end: "}}",
