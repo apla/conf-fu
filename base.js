@@ -263,7 +263,7 @@ ConfFu.prototype.interpolateVars = function (error) {
 			return;
 		}
 
-		var enchanted = self.isEnchantedValue (value);
+		var enchanted = self.isEnchantedValue (value, self.marks, self.types);
 		if (!enchanted) {
 			// WTF???
 			if (self.variables[fullKey]) {
@@ -390,7 +390,7 @@ ConfFu.prototype.iterateTree = function iterateTree (tree, cb, depth) {
 };
 
 
-ConfFu.prototype.isEnchantedValue = function (value, _marks) {
+ConfFu.prototype.isEnchantedValue = function (value, marksOverride, types) {
 
 	var marks = {
 		start: '<',
@@ -400,17 +400,18 @@ ConfFu.prototype.isEnchantedValue = function (value, _marks) {
 		raw: '*',
 		placeholder: '#'
 	};
-	if (!_marks)
-		_marks = {};
-	extend (marks, _marks);
+	marksOverride = marksOverride || this.marks || {};
+	extend (marks, marksOverride);
 
-	var vartypesRe = Object.keys (this.types).join ("|");
+	types = types || this.types || {};
+
+	var vartypesRe = Object.keys (types).join ("|") || "\\w+";
 	var variableReg = new RegExp (
 		marks.start
-		+"((["+marks.safe+marks.raw+"])(("+vartypesRe+")(\\(([^\)]*)\\))?:)?([^>=]+)(=([^>]*))?)"
+		+"((["+marks.safe+marks.raw+"])(("+vartypesRe+")(\\(([^\)]*)\\))?:)?([^"+marks.end+"=]+)(=([^"+marks.end+"]*))?)"
 		+marks.end,
 	"ig");
-	var placeholderRe = /^<((\#)((optional|default):)?([^>]+))>$/i;
+	var placeholderRe = new RegExp ("^"+marks.start+"((\#)((optional|default):)?([^"+marks.end+"]+))"+marks.end+"$", "i");
 	var includeRe     = /^<<([^<>]+)>>$/i;
 
 	var self = this;
@@ -420,8 +421,6 @@ ConfFu.prototype.isEnchantedValue = function (value, _marks) {
 	if ('string' !== typeof value) {
 		return;
 	}
-
-	var self = this;
 
 	var matchData;
 	var lastIdx = 0;
@@ -458,9 +457,9 @@ ConfFu.prototype.isEnchantedValue = function (value, _marks) {
 					if (theVar.before)
 						toConcat.push (theVar.before);
 					var interpolatedVar = pathToVal (dictionary, theVar.variable);
-					if (self.types[theVar.type]) {
-						interpolatedVar = self.types[theVar.type] (theVar, interpolatedVar);
-						if (interpolatedVar === self.types.incompatibleType) {
+					if (types[theVar.type]) {
+						interpolatedVar = types[theVar.type] (theVar, interpolatedVar);
+						if (interpolatedVar === types.incompatibleType) {
 							result.error = theVar.variable+' type ('+theVar.type+') is incompatible with value ' + interpolatedVar;
 							return;
 						}

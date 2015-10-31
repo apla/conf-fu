@@ -44,6 +44,30 @@ describe (baseName+" parse string", function () {
 		var enchanted = confFu.prototype.isEnchantedValue ("<#optional:placeholder>");
 		return "placeholder" in enchanted;
 	});
+
+	var customMarks = {start: "{{", end: "}}"};
+
+	it ("with include enchantment and custom marks", function () {
+		var enchanted = confFu.prototype.isEnchantedValue ("{{{include}}}", customMarks);
+		return "include" in enchanted;
+	});
+	it ("with variable enchantment and custom marks", function () {
+		var enchanted = confFu.prototype.isEnchantedValue ("{{$db.mongo.port}}", customMarks);
+		return "variable" in enchanted;
+	});
+
+	it ("with placeholder enchantment and custom marks", function () {
+		var enchanted = confFu.prototype.isEnchantedValue ("{{#placeholder}}", customMarks);
+		return "placeholder" in enchanted;
+	});
+	it ("with placeholder default enchantment and custom marks", function () {
+		var enchanted = confFu.prototype.isEnchantedValue ("{{#default:12345}}", customMarks);
+		return "placeholder" in enchanted;
+	});
+	it ("with placeholder optional enchantment and custom marks", function () {
+		var enchanted = confFu.prototype.isEnchantedValue ("{{#optional:placeholder}}", customMarks);
+		return "placeholder" in enchanted;
+	});
 	it ("with int variable enchantment", function () {
 		var enchanted = confFu.prototype.isEnchantedValue ("<$int:http_host>");
 		assert (enchanted[0].type === 'int');
@@ -140,6 +164,7 @@ describe (baseName+" format string", function () {
 		return "variable" in enchanted;
 	});
 	it ("custom types", function () {
+		// types will be passed automatically in conf-fu
 		confFu.prototype.types._jsonFor_test = function (meta, value) {
 			return JSON.stringify (value, null, meta.typeArgs || "");
 		};
@@ -147,7 +172,8 @@ describe (baseName+" format string", function () {
 		var interpolated = enchanted.interpolated ({
 			toJson: {a: 1, b: "$%^"}
 		});
-//		console.log (interpolated);
+		// console.log (interpolated);
+		assert (interpolated.constructor === String);
 		var data = JSON.parse (interpolated);
 		assert (data.a === 1);
 		assert (data.b === "$%^");
