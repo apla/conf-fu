@@ -7,18 +7,18 @@
 	},
 	"root": {
 		"zzz": 1,
-		"bbb": "<$zzz>",
+		"bbb": "<*zzz>",
 		"root2": {
-			"bbb": "<$zzz>"
+			"bbb": "<*zzz>"
 		},
 		"root3": {
-			"bbb": "<$zzz>"
+			"bbb": "<*zzz>"
 		},
 		"root4": {
-			"bbb": "<$zzz>"
+			"bbb": "<*zzz>"
 		},
 		"root": {
-			"bbb": "<$zzz>"
+			"bbb": "<*zzz>"
 		},
 		"xxx": {
 			"yyy": {
@@ -29,18 +29,18 @@
 	},
 	"root2": {
 		"zzz": 2,
-		"bbb": "<$zzz>",
+		"bbb": "<*zzz>",
 		"root2": {
-			"bbb": "<$zzz>"
+			"bbb": "<*zzz>"
 		},
 		"root3": {
-			"bbb": "<$zzz>"
+			"bbb": "<*zzz>"
 		},
 		"root4": {
-			"bbb": "<$zzz>"
+			"bbb": "<*zzz>"
 		},
 		"root": {
-			"bbb": "<$zzz>"
+			"bbb": "<*zzz>"
 		},
 		"xxx": {
 			"yyy": {
@@ -51,18 +51,18 @@
 	},
 	"root3": {
 		"zzz": 3,
-		"bbb": "<$zzz>",
+		"bbb": "<*zzz>",
 		"root2": {
-			"bbb": "<$zzz>"
+			"bbb": "<*zzz>"
 		},
 		"root3": {
-			"bbb": "<$zzz>"
+			"bbb": "<*zzz>"
 		},
 		"root4": {
-			"bbb": "<$zzz>"
+			"bbb": "<*zzz>"
 		},
 		"root": {
-			"bbb": "<$zzz>"
+			"bbb": "<*zzz>"
 		},
 		"xxx": {
 			"yyy": {
@@ -73,18 +73,18 @@
 	},
 	"root4": {
 		"zzz": 4,
-		"bbb": "<$zzz>",
+		"bbb": "<*zzz>",
 		"root2": {
-			"bbb": "<$zzz>"
+			"bbb": "<*zzz>"
 		},
 		"root3": {
-			"bbb": "<$zzz>"
+			"bbb": "<*zzz>"
 		},
 		"root4": {
-			"bbb": "<$zzz>"
+			"bbb": "<*zzz>"
 		},
 		"root": {
-			"bbb": "<$zzz>"
+			"bbb": "<*zzz>"
 		},
 		"xxx": {
 			"yyy": {
