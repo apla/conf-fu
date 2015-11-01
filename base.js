@@ -409,7 +409,7 @@ function interpolated (types, operations, dictionary) {
 				return;
 			}
 		}
-		// interpolatedVar = operations[theVar.operation] (interpolatedVar);
+		interpolatedVar = operations[theVar.operation] (interpolatedVar);
 		if (interpolatedVar === undefined) {
 			result.error = theVar.variable+' is not defined';
 			return;
