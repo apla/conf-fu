@@ -126,17 +126,17 @@ function ConfFuIO (options) {
 		this.projectRoot  = new io (options.projectRoot);
 
 	if (!options.configFile && !options.configName) {
-		this.emit ('error', 'core', 'file', "you must define 'configFile' or 'configName' option", null);
+		this.emitDelayed ('error', 'core', 'file', "you must define 'configFile' or 'configName' option", null);
 		return;
 	}
 
 	if (options.configName && options.configFile) {
-		this.emit ('error', 'core', 'file', "you can use exact name for config file with 'configFile' option, or allow to search file by name with any supported format by using 'configName'", null);
+		this.emitDelayed ('error', 'core', 'file', "you can use exact name for config file with 'configFile' option, or allow to search file by name with any supported format by using 'configName'", null);
 		return;
 	}
 
 	if (options.fixupName && options.fixupFile) {
-		this.emit ('error', 'fixup', 'file', "you can use exact name for fixup file with 'fixupFile' option, or allow to search file by name with any supported format by using 'fixupName'", null);
+		this.emitDelayed ('error', 'fixup', 'file', "you can use exact name for fixup file with 'fixupFile' option, or allow to search file by name with any supported format by using 'fixupName'", null);
 		return;
 	}
 
@@ -167,7 +167,7 @@ function ConfFuIO (options) {
 		this.alienFiles  = options.alienFiles;
 
 	if (!options.fixupFile && !options.fixupName) {
-		this.emit ('error', 'fixup', 'file', "fixup file name is undefined", null);
+		this.emitDelayed ('error', 'fixup', 'file', "fixup file name is undefined", null);
 	}
 
 	// TODO: exclusive lock on config file to prevent multiple running scripts
@@ -182,6 +182,10 @@ inheritsMixin (ConfFuIO, ConfFu, EventEmitter);
 module.exports = ConfFuIO;
 
 ConfFuIO.paint = paint;
+
+ConfFuIO.prototype.emitDelayed = function (message, eOrigin, eType, eData, eFile) {
+	process.nextTick (this.emit.bind (this, message, eOrigin, eType, eData, eFile));
+}
 
 ConfFuIO.prototype.loadAll = function (fixupFile, fixupName) {
 	this.findConfigFile ();
@@ -712,11 +716,12 @@ ConfFuIO.prototype.logUnpopulated = function(varPaths) {
 		varPaths[varPath] = value || "<#undefined>";
 	}
 	var messageChunks = [
-		paint.error ((this.fixupFile? "" : "you must define fixup path, then") + "you can execute"),
-		paint.confFu ("<variable> <value>"),
-		"to define individual variables\n or edit",
-		this.fixupFile ? paint.path (this.fixupFile.shortPath ()) : "fixup file",
-		"to define all those vars at once"
+		paint.error ((this.fixupFile? "" : "you must define fixup path, then") + " you can execute"),
+		"\n"+paint.confFu ("set <variable> <value>"),
+		"\nto define individual variables or",
+		"\n"+paint.confFu ("edit fixup"),
+		"\nto define all those vars at once by editing",
+		this.fixupFile ? paint.path (this.fixupFile.shortPath ()) : "fixup file"
 	];
 
 	logger.apply (console, messageChunks);
