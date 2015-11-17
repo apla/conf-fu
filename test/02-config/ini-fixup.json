@@ -9,22 +9,28 @@
 		"include": {
 			"root": {
 				"zzz": null,
-				"bbb": "<$zzz>"
+				"bbb": "<*zzz>",
+				"xxx": {
+					"yyy": {
+						"zzz": "<*zzz>"
+					}
+				},
+				"aaa": "<$xxx.yyy.zzz>"
 			},
 			"root2": {
 				"zzz": 0,
-				"bbb": "<$zzz>"
+				"bbb": "<*zzz>"
 			},
 			"root3": {
 				"zzz": [],
-				"bbb": "<$zzz>"
+				"bbb": "<*zzz>"
 			},
 			"root4": {
 				"zzz": {},
-				"bbb": "<$zzz>"
+				"bbb": "<*zzz>"
 			},
 			"zzz": "aaa",
-			"bbb": "<$zzz>",
+			"bbb": "<*zzz>",
 			"xxx": {
 				"yyy": {
 					"zzz": "zzz"
