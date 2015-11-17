@@ -98,7 +98,7 @@ var jqextend = function () {
 	return target;
 }
 
-var clone  = ConfFu.clone  = jqextend.bind (ConfFu, true, {});
+var clone  = ConfFu.clone  = function (value) {return JSON.parse (JSON.stringify (value))};
 var extend = ConfFu.extend = jqextend.bind (ConfFu, true);
 
 var PLATFORM_NATIVE_TYPES = {

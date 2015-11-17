@@ -160,6 +160,7 @@ describe (baseName+" loading config", function () {
 
 		config.on ('error', function () {
 			console.log (arguments);
+			assert (false);
 		});
 
 		config.on ('ready', function () {
@@ -183,6 +184,7 @@ describe (baseName+" loading config", function () {
 
 		config.on ('error', function () {
 			console.log (arguments);
+			assert (false);
 		});
 
 		config.on ('ready', function () {
