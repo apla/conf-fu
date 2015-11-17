@@ -393,23 +393,21 @@ ConfFuIO.prototype.interpolateAlien = function (alienFileTmpl, alienFile, cb) {
 		// TODO: stream parser
 		var value = data.toString();
 
-		// TODO: remove copy-paste
-		var variableReg   = /<((\$)((int|quoted|bool)(\(([^\)]*)\))?:)?([^>=]+)(=([^>]*))?)>/gi;
-		var marks = {start: '<', end: '>', typeRaw: '$', typeSafe: '🐸'};
-		var toInterpolate = value.replace (variableReg, "<$$$7>");
-		var interpolated, error;
-		try {
-			interpolated = ConfFuIO.interpolate (toInterpolate, self.config, marks, true);
-		} catch (e) {
-			error = e;
-			self.emit ('error', 'alien', 'variables', e);
-			self.setVariables (e, true);
-			// TODO: emit something if cb is undefined?
-			self.ioWait --;
-			cb && cb (error, interpolated);
+		var enchanted = self.isEnchantedValue (value);
+		if (enchanted) {
 
-			return;
-		};
+			var interpolated = enchanted.interpolated (self.config);
+			// console.log ('ALIEN INTERPOLATE', interpolated === undefined, enchanted.asVariables);
+			if (interpolated === undefined) {
+				// console.log ('ALIEN INTERPOLATE ERROR');
+				self.emit ('error', 'alien', 'variables', enchanted.asVariables);
+				self.setVariables (enchanted.asVariables, true);
+				// TODO: emit something if cb is undefined?
+				self.ioWait --;
+				cb && cb (enchanted.error, interpolated);
+				return;
+			}
+		}
 
 		if (alienFile === false || alienFile === null) {
 			// TODO: emit something if cb is undefined?
@@ -420,6 +418,12 @@ ConfFuIO.prototype.interpolateAlien = function (alienFileTmpl, alienFile, cb) {
 		} else if ((alienFile === true || alienFile === undefined) && alienFileTmpl.extension === self.alienExt) {
 			alienFile = new io (alienFileTmpl.path.slice (0, -1 * (self.alienExt.length + 1)));
 		} else if (!(alienFile instanceof io)) { // assumed string path
+			var enchanted = self.isEnchantedValue (alienFile);
+			if (enchanted) {
+				var realAlienFile = enchanted.interpolated (self.config);
+				if (realAlienFile)
+					alienFile = realAlienFile;
+			}
 			alienFile = new io (alienFile);
 		}
 

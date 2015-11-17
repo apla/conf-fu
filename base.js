@@ -168,76 +168,6 @@ var pathToVal = ConfFu.pathToVal = function (dict, path, value, method) {
 };
 
 
-/**
-
- * interpolate variables inside string
-
- * @param {string} str string to interpolate
-
- * @param {Object} dict dictonary of variables
-
- * @param {Object} marks marks of variables in string, by default: {start: '{', end: '}', path: '.', typeSafe: '$', typeRaw: '*'}
-
- * @param {type} mustThrow must throw on interpolation error or just return undef
-
- */
-// TODO: sync interpolate and interpolated in enchanted vars
-var interpolate = ConfFu.interpolate = function (str, dict, marks, mustThrow) {
-	if (!marks)
-		marks = {};
-	marks.start    = marks.start || '{';
-	marks.end      = marks.end   || '}';
-	marks.path     = marks.path  || '.';
-	marks.typeSafe = marks.typeSafe || '$';
-	marks.typeRaw  = marks.typeRaw  || '*';
-
-	// TODO: escape character range delims
-	var re = new RegExp([
-		'[', marks.start, ']',
-		'([', marks.typeSafe, marks.typeRaw, '])',
-		'([^', marks.end, ']+)',
-		'[', marks.end, ']'
-	].join(''), 'g');
-
-	var startRe = new RegExp([
-		'[', marks.start, ']',
-		'([', marks.typeSafe, marks.typeRaw, '])'
-	].join(''), 'g');
-
-	var values = [];
-	var fields = {};
-
-	var replacedStr = str.replace(re, function (_, varType, varPath) {
-		var value;
-		if (varPath.indexOf(marks.path) > -1) {
-			value = pathToVal(dict, varPath);
-		} else {
-			value = dict[varPath];
-		}
-
-		if (ConfFu.isEmpty(value) && varType == marks.typeSafe) {
-			value = undefined;
-		}
-
-		values.push(value);
-		fields[varPath] = value;
-
-		return value;
-	});
-
-	if (values.some(function (v) { return (typeof v === "undefined"); })) {
-		if (mustThrow === true)
-			throw fields;
-		return undefined;
-	}
-
-	if (values.length === 1 && (values[0] + '') === replacedStr) {
-		return values[0];
-	}
-
-	return replacedStr;
-};
-
 ConfFu.prototype.applyFixup = function () {
 	// all files is loaded or failed
 	if (this.fixup) {
@@ -426,7 +356,14 @@ function interpolated (types, operations, dictionary) {
 	return toConcat.join ("");
 }
 
-
+/**
+ * search for enchantments
+ * @param   {Object} value         value to search
+ * @param   {Object} marksOverride custom marks instead of default ones: start: '<', end: '>', path: '.', placeholder: '#'
+ * @param   {Object} types         custom types, see example at types.js
+ * @param   {Object} operations    custom operations, see operations.js
+ * @returns {Object} enchantments or undefined. TODO: explain variable/placeholder/include/intepolated
+ */
 ConfFu.prototype.isEnchantedValue = function (value, marksOverride, types, operations) {
 
 	var marks = {
