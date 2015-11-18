@@ -2,3 +2,33 @@ xxx:
   yyy:
     zzz: 1
   zzz: 222
+database:
+  include:
+    root:
+      xxx:
+        yyy:
+          zzz: '<*xxx.zzz>'
+      zzz: '<*xxx.zzz>'
+      aaa: '<$xxx.yyy.zzz>'
+      bbb: '<*xxx.zzz>'
+    root2:
+      xxx:
+        yyy:
+          zzz: '<*xxx.zzz>'
+      zzz: '<*xxx.zzz>'
+      aaa: '<$xxx.yyy.zzz>'
+      bbb: '<*xxx.zzz>'
+    root3:
+      xxx:
+        yyy:
+          zzz: '<*xxx.zzz>'
+      zzz: '<*xxx.zzz>'
+      aaa: '<$xxx.yyy.zzz>'
+      bbb: '<*xxx.zzz>'
+    root4:
+      xxx:
+        yyy:
+          zzz: '<*xxx.zzz>'
+      zzz: '<*xxx.zzz>'
+      aaa: '<$xxx.yyy.zzz>'
+      bbb: '<*xxx.zzz>'
