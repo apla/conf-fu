@@ -271,11 +271,12 @@ ConfFu.prototype.unpopulatedVariables = function (fixupVars, force) {
 
 ConfFu.prototype.setVariables = function (fixupVars, force, undef) {
 	var self = this;
-	// ensure fixup is defined
-	// TODO: migration from instance-based
+
+	var changed = false;
 
 	if (!this.fixup) {
 		this.fixup = {};
+		changed = 1;
 	}
 
 	// apply patch to fixup config
@@ -286,10 +287,16 @@ ConfFu.prototype.setVariables = function (fixupVars, force, undef) {
 			pathChunks[index] = chunk;
 			var newRoot = root[chunk];
 			if (index === chunks.length - 1) {
+				var value = (fixupVars[varPath] && fixupVars[varPath].constructor === Array) ? fixupVars[varPath][0] : fixupVars[varPath] || undef;
+				if (!(chunk in root) || (root[chunk] !== value && force)) {
+					changed = 2;
+					// console.log (varPath, root[chunk], '=>', value);
+				}
 				if (force || !(chunk in root)) {
-					root[chunk] = (fixupVars[varPath] && fixupVars[varPath].constructor === Array) ? fixupVars[varPath][0] : fixupVars[varPath] || undef;
+					root[chunk] = value;
 				}
 			} else if (!newRoot) {
+				changed = 3;
 				root[chunk] = {};
 				newRoot = root[chunk];
 			}
@@ -297,6 +304,7 @@ ConfFu.prototype.setVariables = function (fixupVars, force, undef) {
 		});
 	});
 
+	return changed;
 };
 
 ConfFu.prototype.iterateTree = function iterateTree (tree, cb, depth) {

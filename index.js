@@ -577,10 +577,15 @@ ConfFuIO.prototype.readInstance = function () {
 };
 
 ConfFuIO.prototype.setVariables = function (fixupVars, force) {
-	// ensure fixup is defined
-	// TODO: migration from instance-based
 
-	this.super_.prototype.setVariables.apply (this, arguments);
+	var changed = this.super_.prototype.setVariables.apply (this, arguments);
+
+	this.fixupChanged = changed;
+
+	// TODO: make sure every test case is covered in 06-dirs with fixupChanged
+	// console.log ("setVariables changed:", changed);
+
+	if (!changed) return;
 
 	if (this.fixupFile) {
 		// TODO: create fixup directory or display message for user

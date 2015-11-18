@@ -28,6 +28,7 @@ describe (baseName+" loading config", function () {
 		config.verbose = globalVerbose || false;
 
 		config.on ('ready', function () {
+			assert (!config.fixupChanged); // fixup must be leaved intact
 			done();
 		});
 		config.on ('error', function (eOrigin, eType, eData, eFile) {
@@ -70,9 +71,24 @@ describe (baseName+" loading config", function () {
 			assert (false, 'config not populated');
 			done ();
 		});
+
+		var pass = false;
+
 		config.on ('error', function (eOrigin, eType, eData, eFile) {
 			if (eType === 'variables') {
-				setTimeout (function () {
+				pass = true;
+			} else if (eType === 'file' && eOrigin === 'fixup') {
+				// that's ok, because we create fixup in case of his abscence
+			} else {
+				assert (false, 'just got unexpected error');
+				done ();
+			}
+		});
+
+		config.on ('notReady', function () {
+			if (!pass) assert (false);
+			assert (config.fixupChanged); // fixup must be written
+			setTimeout (function () {
 				fs.stat (path.join (configDir, 'not-found.json'), function (err, stats) {
 					if (!err) {
 						// this file must be created
@@ -81,13 +97,7 @@ describe (baseName+" loading config", function () {
 					}
 					assert (false, 'filesystem not fast enough to create this file, we must wrap around this case');
 				});
-				}, 100);
-			} else if (eType === 'file' && eOrigin === 'fixup') {
-				// that's ok, because we create fixup in case of his abscence
-			} else {
-				assert (false, 'just got unexpected error');
-				done ();
-			}
+			}, 100);
 		});
 //		assert (Object.keys (config).length > 0, 'with keys');
 	});
@@ -101,18 +111,27 @@ describe (baseName+" loading config", function () {
 		config.verbose = globalVerbose || false;
 
 		config.on ('ready', function () {
-			console.error ("unexpected ready");
+			throw "unexpected ready";
+			assert (false);
 		});
+
+		var pass = false;
 
 		config.on ('error', function (eOrigin, eType, eData, eFile) {
 			if (eType === 'variables') {
-				done();
+				pass = true;
 				return;
 			} else if (eType === 'file' && eOrigin === 'fixup') {
 				// config fixup not found
 				return;
 			}
-			console.error ("unexpected error", arguments);
+			throw "unexpected error";
+		});
+
+		config.on ('notReady', function () {
+			if (!pass) assert (false);
+			assert (config.fixupChanged); // fixup must be written
+			done ();
 		});
 	});
 
@@ -132,7 +151,7 @@ describe (baseName+" loading config", function () {
 		});
 
 		config.on ('ready', function () {
-
+			assert (!config.fixupChanged); // fixup must be leaved intact
 //			console.log (JSON.stringify (config.config));
 			assert ("xxx" in config.config.root, "has 'xxx' in 'root'");
 
@@ -164,7 +183,7 @@ describe (baseName+" loading config", function () {
 		});
 
 		config.on ('ready', function () {
-
+			assert (!config.fixupChanged); // fixup must be leaved intact
 //			console.log (JSON.stringify (config.config));
 			assert ("zzz" in config.config.database.include.root, "has 'zzz' in 'root'");
 
@@ -188,10 +207,10 @@ describe (baseName+" loading config", function () {
 		});
 
 		config.on ('ready', function () {
-
+			assert (!config.fixupChanged); // fixup must be leaved intact
 			//			console.log (JSON.stringify (config.config));
 			// WHY???
-			// assert ("zzz" in config.config.database.include.root, "has 'zzz' in 'root'");
+			assert ("zzz" in config.config.database.include.root, "has 'zzz' in 'root'");
 
 			//			console.trace ();
 
@@ -247,7 +266,7 @@ describe (baseName+" loading config", function () {
 		});
 
 		config.on ('ready', function () {
-
+			assert (config.fixupChanged); // fixup must be written
 			assert ("default-val" in config.config, "has default key");
 			assert (config.config["default-val"] === "12345", "has default key");
 			assert ("optional-val" in config.config, "has optional key");
