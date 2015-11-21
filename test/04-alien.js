@@ -26,7 +26,11 @@ describe (baseName+" interpolate vars in external file", function () {
 	it ("with include enchantment", function (done) {
 		var config = new confFu ({
 			configFile: path.join (configDir, 'index.json'),
-			fixupFile: path.join (configDir, 'fixup.json')
+			fixupFile: path.join (configDir, 'fixup.json'),
+			alienFiles: [{
+				tmpl: path.join (configDir, 'httpd.conf.conf-fu'),
+				file: path.join (configDir, 'httpd.conf')
+			}]
 		});
 
 		config.verbose = globalVerbose || false;
@@ -40,7 +44,7 @@ describe (baseName+" interpolate vars in external file", function () {
 		});
 		config.on ('error', function (eOrigin, eType, eData, eFile) {
 			console.log (arguments);
-			assert (false, 'wrong config');
+			assert (false, ['wrong config', eOrigin, eType, eData, eFile].join (" "));
 		});
 	});
 });

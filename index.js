@@ -526,56 +526,6 @@ ConfFuIO.prototype.onInstanceRead = function (err, data) {
 	this.findFixupFile ();
 }
 
-ConfFuIO.prototype.readInstance = function () {
-	var self = this;
-	this.instance = process.env.PROJECT_INSTANCE;
-	if (this.instance) {
-		console.log (paint.confFu(), 'instance is:', paint.path (this.instance));
-		self.emit ('instantiated');
-		return;
-	}
-	var instanceFile = this.root.fileIO (path.join (this.varDir, 'instance'));
-
-	instanceFile.readFile (function (err, data) {
-
-		if (err) {
-			var instanceName = [
-				(process.env.USER || process.env.USERNAME),
-				(process.env.HOSTNAME || process.env.COMPUTERNAME)
-			].join ('@');
-			// it is ok to have instance name defined and have no instance
-			// or fixup file because fixup is empty
-			self.instance = instanceName;
-			self.root.fileIO (path.join (self.varDir, instanceName)).mkdir ();
-			instanceFile.writeFile (instanceName);
-			self.emit ('instantiated');
-			return;
-		}
-
-		// assume .dataflows dir always correct
-		// if (err && self.varDir != '.dataflows') {
-			// console.error ("PROBABLY HARMFUL: can't access "+self.varDir+"/instance: "+err);
-			// console.warn (paint.confFu(), 'instance not defined');
-		// } else {
-
-		var instance = data.toString().split (/\n/)[0];
-		self.instance = instance == "undefined" ? null : instance;
-		var args = [paint.confFu(), 'instance is:', paint.path (instance)];
-		if (err) {
-			args.push ('(' + paint.error (err) + ')');
-		} else if (self.legacy) {
-			console.error ("\tmv var/instance .dataflows/");
-		}
-		if (self.legacy) {
-			console.log ();
-		}
-		console.log.apply (console, args);
-		// }
-
-		self.emit ('instantiated');
-	});
-};
-
 ConfFuIO.prototype.setVariables = function (fixupVars, force) {
 
 	var changed = this.super_.prototype.setVariables.apply (this, arguments);
@@ -823,7 +773,7 @@ ConfFuIO.prototype.loadIncludes = function (config, level, basePath, cb) {
 				}
 
 				if (!parsed || parsed.error) {
-					this.emit ('error', 'include', 'parse', (parsed ? parsed.error : null), basePath); // TODO: type error when parsed not defined
+					self.emit ('error', 'include', 'parse', (parsed ? parsed.error : null), basePath); // TODO: type error when parsed not defined
 					return;
 				}
 
