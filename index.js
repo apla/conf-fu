@@ -7,7 +7,7 @@ var util = require ('util');
 var EventEmitter = require ('events').EventEmitter;
 
 var io    = require ('./io');
-var paint = require ('./lib/color');
+var paint = require ('paintbrush');
 
 paint.error  = paint.bind (paint, "red+white_bg");
 paint.path   = paint.cyan.bind (paint);

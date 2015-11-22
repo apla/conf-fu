@@ -1,7 +1,7 @@
 "use strict";
 
 var path     = require ('path');
-var fsObject = require ('./lib/fs-object');
+var fsObject = require ('fsobject');
 var formats  = require ('./formats');
 
 /**
