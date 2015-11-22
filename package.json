@@ -1,7 +1,7 @@
 {
 	"name": "conf-fu",
 	"description": "Advanced configuration with includes, variables and placeholders.",
-	"version": "0.5.14",
+	"version": "0.5.15",
 	"keywords": [
 		"configuration",
 		"settings"
@@ -39,10 +39,10 @@
 		"fsobject": "^1.0.0",
 		"paintbrush": "^1.0.0"
 	},
-	"bundledDependencies": {
-		"fsobject": "^1.0.0",
-		"paintbrush": "^1.0.0"
-	},
+	"bundledDependencies": [
+		"fsobject",
+		"paintbrush"
+	],
 	"scripts": {
 		"test": "/usr/bin/env istanbul cover _mocha -- -R list"
 	},
