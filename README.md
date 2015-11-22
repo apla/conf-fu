@@ -1,6 +1,10 @@
 conf-fu
 ==========
 
+[![build](https://travis-ci.org/apla/conf-fu.svg)](https://travis-ci.org/apla/conf-fu)
+[![NPM Version](http://img.shields.io/npm/v/conf-fu.svg?style=flat)](https://www.npmjs.org/package/conf-fu)
+[![codecov.io](https://codecov.io/github/apla/conf-fu/coverage.svg?branch=master)](https://codecov.io/github/apla/conf-fu?branch=master)
+
 Simple configuration module to handle complex problems
 
 Install

@@ -34,6 +34,7 @@
 	"devDependencies": {
 		"mocha": "*",
 		"istanbul": "*",
+		"codecov.io": "*",
 		"js-yaml": "^3.4.3",
 		"ini": "^1.3.4",
 		"fsobject": "^1.0.0",
@@ -44,7 +45,7 @@
 		"paintbrush"
 	],
 	"scripts": {
-		"test": "/usr/bin/env istanbul cover _mocha -- -R list"
+		"test": "/usr/bin/env istanbul cover _mocha -- -R list && cat ./coverage/coverage.json | codecov"
 	},
 	"license": "GPLv3",
 	"readmeFilename": "README.md"
