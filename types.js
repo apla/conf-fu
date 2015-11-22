@@ -17,7 +17,7 @@ return {
 		if (value !== undefined && value.constructor !== Number)
 			return incompatibleType;
 		if (value === undefined && meta.default !== undefined)
-			value = meta.default;
+			value = parseInt (meta.default);
 		return value;
 	},
 	bool: function (meta, value) {
@@ -49,10 +49,11 @@ return {
 		}
 		if (presentation)
 			return presentation.reverse()[value*1];
-		return value.toString();
+		return value;
 	},
 	string: function (meta, value) {
-		if (value !== undefined && value.constructor !== String)
+		// string is fine with all simple data types, but not with arrays and objects
+		if (value !== undefined && typeof value === 'object')
 			return incompatibleType;
 		if (value === undefined && meta.default !== undefined)
 			value = meta.default;
@@ -60,7 +61,7 @@ return {
 		// typeArgs for string is a quoting preference
 //		if (meta.typeArgs === '""')
 //			value
-		return value;
+		return value.toString();
 	}
 }
 

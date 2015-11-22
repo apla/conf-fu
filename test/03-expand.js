@@ -88,6 +88,8 @@ describe (baseName+" format string", function () {
 		http_domain: "example.net",
 		http_port: 808080,
 		db_tcp_sock: false,
+		object: {a: "b"},
+		emptyObject: {}
 	};
 
 	it ("raw int", function () {
@@ -96,6 +98,19 @@ describe (baseName+" format string", function () {
 		// ensure int is real int, not within string
 		assert (interpolated.constructor === Number);
 		return parseInt (interpolated) === interpolated;
+	});
+	it ("object", function () {
+		var enchanted = confFu.prototype.isEnchantedValue ("<$object>");
+		var interpolated = enchanted.interpolated (data);
+		assert (interpolated.constructor === Object);
+		assert (interpolated.a === "b");
+		return interpolated.a;
+	});
+	it ("empty object", function () {
+		var enchanted = confFu.prototype.isEnchantedValue ("<$emptyObject>");
+		var interpolated = enchanted.interpolated (data);
+		assert (interpolated === undefined);
+		return !interpolated;
 	});
 	it ("multiple values", function () {
 		var enchanted = confFu.prototype.isEnchantedValue ("<$http_domain>:<$http_port>");
@@ -120,6 +135,19 @@ describe (baseName+" format string", function () {
 //		console.log (interpolated, enchanted);
 		return;
 	});
+	it ("int with default", function () {
+		var enchanted = confFu.prototype.isEnchantedValue ("<$int:http_port=8080>");
+		var interpolated = enchanted.interpolated (data);
+		assert (interpolated === 808080);
+		return;
+	});
+	it ("int with default and no value in dict", function () {
+		var enchanted = confFu.prototype.isEnchantedValue ("<$int:other_port=8051>");
+		var interpolated = enchanted.interpolated (data);
+		assert (interpolated.constructor === Number);
+		assert (interpolated === 8051); // should be int, not string
+		return;
+	});
 	it ("bool", function () {
 		var enchanted = confFu.prototype.isEnchantedValue ("<$bool:db_tcp_sock>");
 		assert (enchanted[0].type === 'bool');
@@ -129,6 +157,25 @@ describe (baseName+" format string", function () {
 		var enchanted = confFu.prototype.isEnchantedValue ("<$bool(on|off):db_tcp_sock>");
 		assert (enchanted[0].type === 'bool');
 		return "variable" in enchanted;
+	});
+	it ("bool with wrong type", function () {
+		var enchanted = confFu.prototype.isEnchantedValue ("<$bool:http_host>");
+		var interpolated = enchanted.interpolated (data);
+		// console.log (enchanted);
+		assert (interpolated === undefined);
+	});
+	it ("bool with default", function () {
+		var enchanted = confFu.prototype.isEnchantedValue ("<$bool:some_option=true>");
+		assert (enchanted[0].type === 'bool');
+		assert (enchanted[0].default === 'true');
+		var interpolated = enchanted.interpolated (data);
+		assert (interpolated === true);
+		enchanted = confFu.prototype.isEnchantedValue ("<*bool:some_option=false>");
+		assert (enchanted[0].type === 'bool');
+		assert (enchanted[0].default === 'false');
+		interpolated = enchanted.interpolated (data);
+		// console.log (interpolated, interpolated.constructor);
+		assert (interpolated === false);
 	});
 	it ("bool with custom status and default", function () {
 		var enchanted = confFu.prototype.isEnchantedValue ("<$bool(on|off):db_tcp_sock=off>");
@@ -148,9 +195,25 @@ describe (baseName+" format string", function () {
 		assert (interpolated === 'off');
 		return "variable" in enchanted;
 	});
+	it ("string is fine with any data type", function () {
+		var enchanted = confFu.prototype.isEnchantedValue ("<$string:http_port>");
+		assert (enchanted[0].type === 'string');
+		var interpolated = enchanted.interpolated (data);
+		assert (interpolated === "808080");
+		return "variable" in enchanted;
+	});
+	it ("string with default", function () {
+		var enchanted = confFu.prototype.isEnchantedValue ("<$string:strstr=222>");
+		assert (enchanted[0].type === 'string');
+		var interpolated = enchanted.interpolated (data);
+		assert (interpolated === "222");
+		return "variable" in enchanted;
+	});
 	it ("quoted string", function () {
 		var enchanted = confFu.prototype.isEnchantedValue ("<$string(\"\"):http_domain>");
 		assert (enchanted[0].type === 'string');
+		var interpolated = enchanted.interpolated (data);
+		console.log (interpolated);
 		return "variable" in enchanted;
 	});
 	it ("custom marks", function () {
