@@ -101,50 +101,11 @@ var jqextend = function () {
 var clone  = ConfFu.clone  = function (value) {return JSON.parse (JSON.stringify (value))};
 var extend = ConfFu.extend = jqextend.bind (ConfFu, true);
 
-var PLATFORM_NATIVE_TYPES = {
-	// Buffer seems to be the only custom type in the Node core
-	'Buffer': true
-};
-
-var lookUpCustomType = function (obj) {
-	var name = obj && obj.constructor && obj.constructor.name;
-	if (name && name in PLATFORM_NATIVE_TYPES) {
-		return name;
+ConfFu.isEmpty = function isEmpty (value) {
+	if (typeof value === "object") {
+		return Object.keys (value).length ? false : true;
 	}
-};
-/**
- * Get the type of any object.
- * Usage:
- *     Object.typeOf([ 1, 2, 3 ]);    // 'Array'
- *     Object.typeOf(null);           // 'Null'
- *     Object.typeOf(new Buffer('')); // 'Buffer'
- */
-var typeOf = function (obj) {
-	return lookUpCustomType(obj) ||
-		Object.prototype.toString.call(obj).slice(8, -1);
-};
-
-/**
- * Safe and universal type check.
- * Usage:
- *     Object.is('Number', 4);            // true
- *     Object.is('Undefined', undefined); // true
- */
-var is = function (type, obj) {
-	return type == typeOf(obj);
-};
-
-ConfFu.isEmpty = function isEmpty(obj) {
-	var type = typeOf(obj);
-	return (
-		('Undefined' == type)                              ||
-		('Null'      == type)                              ||
-		('Boolean'   == type && false === obj)             ||
-		('Number'    == type && (0 === obj || isNaN(obj))) ||
-		('String'    == type && 0 == obj.length)           ||
-		('Array'     == type && 0 == obj.length)           ||
-		('Object'    == type && 0 == Object.keys(obj).length)
-	);
+	return value ? false : true;
 }
 
 var pathToVal = ConfFu.pathToVal = function (dict, path, value, method) {

@@ -34,7 +34,13 @@
 	"devDependencies": {
 		"mocha": "*",
 		"js-yaml": "^3.4.3",
-		"ini": "^1.3.4"
+		"ini": "^1.3.4",
+		"fsobject": "^1.0.0",
+		"paintbrush": "^1.0.0"
+	},
+	"bundledDependencies": {
+		"fsobject": "^1.0.0",
+		"paintbrush": "^1.0.0"
 	},
 	"scripts": {
 		"test": "/usr/bin/env mocha --reporter list"
