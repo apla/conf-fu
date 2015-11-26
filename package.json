@@ -45,6 +45,8 @@
 		"paintbrush"
 	],
 	"scripts": {
+		"prepublish": "/usr/bin/env node bin/build.js",
+		"pretest": "/usr/bin/env node bin/build.js",
 		"test": "/usr/bin/env istanbul cover _mocha -- -R list && cat ./coverage/coverage.json | codecov"
 	},
 	"license": "GPLv3",
