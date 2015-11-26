@@ -1,0 +1,27 @@
+ServerRoot "/srv/www"
+
+Listen <$int:httpd.port>
+
+Timeout <$int:httpd.timeout=15>
+KeepAlive <$bool(on|off):httpd.keepAlive=off>
+
+User <$user.name>
+Group users
+
+ServerAdmin <$user.email>
+
+ServerName site.local
+
+ErrorLog "<$user.home>/<$project.name>/logs/apache/error_log"
+LogLevel warn
+
+CustomLog "<$user.home>/<$project.name>/logs/apache/access_log" common
+
+PidFile "<$user.home>/<$project.name>/logs/httpd2.pid"
+LockFile "<$user.home>/<$project.name>/logs/accept.lock"
+
+StartServers         <$int:httpd.fork.count>
+MinSpareServers      <$int:httpd.fork.spare.0>
+MaxSpareServers      <$int:httpd.fork.spare.1>
+MaxClients           <$int:httpd.fork.clients>
+MaxRequestsPerChild  <$int:httpd.fork.clients>

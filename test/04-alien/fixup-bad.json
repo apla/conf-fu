@@ -1,0 +1,23 @@
+{
+	"user": {
+		"email": "<#undefined>",
+		"name": "<#undefined>",
+		"home": "<#undefined>"
+	},
+	"httpd-bad": {
+		"port": "<#undefined>",
+		"timeout": "<#undefined>",
+		"keepAlive": "<#undefined>",
+		"fork": {
+			"count": "<#undefined>",
+			"spare": {
+				"0": "<#undefined>",
+				"1": "<#undefined>"
+			},
+			"clients": "<#undefined>"
+		}
+	},
+	"project": {
+		"name": "<#undefined>"
+	}
+}

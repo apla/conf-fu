@@ -19,6 +19,81 @@ describe (baseName+" loading config", function () {
 		});
 	});
 
+	it ("with no config file", function (done) {
+		var config = new confFu ({
+		});
+
+		config.on ('notReady', function () {
+			done();
+		});
+	});
+
+	it ("with config file and name", function (done) {
+		var config = new confFu ({
+			configFile: "x",
+			configName: "x"
+		});
+
+		config.on ('notReady', function () {
+			done();
+		});
+	});
+
+	it.skip ("with fixup file and name", function (done) {
+		var config = new confFu ({
+			configFile: "x",
+			fixupFile: "x",
+			fixupName: "x"
+		});
+
+		config.on ('notReady', function () {
+			done();
+		});
+	});
+
+
+	it ("with non existing file", function (done) {
+		var config = new confFu ({
+			configFile: path.join (configDir, 'aaa.json'),
+		});
+
+		config.verbose = true;
+
+		config.on ('notReady', function () {
+			done();
+		});
+	});
+
+	it ("with bad format file", function (done) {
+		var config = new confFu ({
+			configFile: path.join (configDir, 'bad.json'),
+		});
+
+		config.verbose = true;
+
+		config.on ('notReady', function () {
+			// console.trace ();
+			done();
+		});
+	});
+
+	it ("with bad include file", function (done) {
+		var config = new confFu ({
+			configFile: path.join (configDir, 'bad-include.json'),
+		});
+
+		config.on ('notReady', function () {
+			// console.trace ();
+			done();
+		});
+
+		config.on ('error', function (eOrigin, eType, eData, eFile) {
+			// console.log (arguments);
+			// assert (false, 'wrong config');
+		});
+	});
+
+
 	it ("and good fixup should return config", function (done) {
 		var config = new confFu ({
 			configFile: path.join (configDir, 'index.json'),
@@ -93,6 +168,7 @@ describe (baseName+" loading config", function () {
 					if (!err) {
 						// this file must be created
 						done ();
+						config.logVariables();
 						return;
 					}
 					assert (false, 'filesystem not fast enough to create this file, we must wrap around this case');

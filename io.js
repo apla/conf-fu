@@ -1,6 +1,7 @@
 "use strict";
 
 var path     = require ('path');
+var util     = require ('util');
 var fsObject = require ('fsobject');
 var formats  = require ('./formats');
 
@@ -19,7 +20,9 @@ function io () {
 	this.appendFormat();
 }
 
-io.prototype = Object.create(fsObject.prototype);
+util.inherits (io, fsObject);
+
+// io.prototype = Object.create(fsObject.prototype);
 
 io.prototype.appendFormat = function () {
 	if (this.extension in formats) {
@@ -53,6 +56,22 @@ io.prototype.readAndParseFile = function (cb) {
 
 		var parsedObject = self.parseBuffer (data);
 		cb (null, data, parsedObject);
+	});
+}
+
+io.prototype.serializeToFile = function (data, cb) {
+
+	var self = this;
+
+	var serializedData = this.stringify (data);
+
+	this.writeFile (serializedData, function (err, data) {
+		if (err) {
+			cb (err);
+			return;
+		}
+
+		cb (null);
 	});
 }
 

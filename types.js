@@ -16,22 +16,24 @@ var types = {
 		if (meta.typeArgs)
 			presentation = meta.typeArgs.split ("|");
 		if (value === undefined) {
-			if (value === undefined && meta.default !== undefined) {
+			if (meta.default !== undefined) {
 				var def = meta.default;
 				if (def.match (/^true$/i)) {
 					value = true;
 				} else if (def.match (/^false$/i)) {
 					value = false;
 				} else {
-					var m = def.match (new RegExp ("^"+meta.typeArgs.replace (/[\|,:]/, ")|("+")$", "i")));
+					var m = def.match (new RegExp ("^(" + presentation.join ("|") + ")$", "i"));
 					if (!m)
 						return incompatibleType;
-					if (m[1] !== undefined) {
+					if (m[1] === presentation[0]) {
 						value = true;
-					} else if (m[2] !== undefined) {
+					} else if (m[1] === presentation[1]) {
 						value = false;
 					}
 				}
+			} else {
+				return value;
 			}
 		} else {
 			if (value.constructor !== Boolean)

@@ -83,8 +83,11 @@ var clone  = ConfFu.clone  = function (value) {return JSON.parse (JSON.stringify
 var extend = ConfFu.extend = jqextend.bind (ConfFu, true);
 
 ConfFu.isEmpty = function isEmpty (value) {
-	if (typeof value === "object") {
+	if (typeof value === "object" && value !== null) {
 		return Object.keys (value).length ? false : true;
+	}
+	if (value && value.constructor === String) {
+		value = value.trim();
 	}
 	return value ? false : true;
 }

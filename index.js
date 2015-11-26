@@ -6,8 +6,9 @@ var util = require ('util');
 
 var EventEmitter = require ('events').EventEmitter;
 
-var io    = require ('./io');
-var paint = require ('paintbrush');
+var io       = require ('./io');
+var fsObject = require ('fsobject');
+var paint    = require ('paintbrush');
 
 paint.error  = paint.bind (paint, "red+white_bg");
 paint.path   = paint.cyan.bind (paint);
@@ -184,7 +185,13 @@ module.exports = ConfFuIO;
 ConfFuIO.paint = paint;
 
 ConfFuIO.prototype.emitDelayed = function (message, eOrigin, eType, eData, eFile) {
-	process.nextTick (this.emit.bind (this, message, eOrigin, eType, eData, eFile));
+	process.nextTick (function () {
+		this.emit (message, eOrigin, eType, eData, eFile);
+		if (message === 'error' && eOrigin === 'core') {
+			this.checkList.coreLoaded = false;
+			this.applyFixup ();
+		}
+	}.bind (this));
 }
 
 ConfFuIO.prototype.loadAll = function (fixupFile, fixupName) {
@@ -238,21 +245,31 @@ var ioWait = 0;
 ConfFuIO.prototype.ioDone = function (tag) {
 	var self = this;
 	ioWait++;
-	//console.log ('ioWait++', dirsToProcess);
+	// console.log ('ioWait++');
 	return function () {
 		ioWait --;
-		//console.log ('ioWait--', dirsToProcess);
+		// console.log ('ioWait--');
 		if (!ioWait)
 			setTimeout (function () {
-				if (!ioWait)
+				if (!ioWait) {
+					// console.log ('DONE');
 					self.emit (tag || 'done');
+				}
 			}, 100);
 	}.bind (this);
 }
 
 
 ConfFuIO.prototype.applyFixup = function () {
-	if (this.checkList.coreLoaded === null || this.checkList.fixupLoaded === null) {
+	if (
+		this.checkList.coreLoaded === null
+		|| (this.checkList.fixupLoaded === null && this.checkList.coreLoaded !== false)
+	) {
+		return;
+	}
+
+	if (this.checkList.coreLoaded === false) {
+		this.emit ('notReady');
 		return;
 	}
 
@@ -266,7 +283,7 @@ ConfFuIO.prototype.applyFixup = function () {
 	// 2) alien file was read but have additional variables to resolve
 	if (this.alienFiles && !this.checkList.alienRead) {
 		for (var alienFileTmpl in this.alienFiles) {
-			this.analyzeAlien (
+			this.interpolateAlien (
 				this.alienFiles[alienFileTmpl].tmpl,
 				this.alienFiles[alienFileTmpl].file,
 				this.ioDone ('alien-read')
@@ -304,7 +321,7 @@ ConfFuIO.prototype.addAlien = function (alienFileTmpl, alienFile, cb) {
 	};
 }
 
-ConfFuIO.prototype.analyzeAlien = function (alienFileTmpl, alienFile, cb) {
+ConfFuIO.prototype.interpolateAlien = function (alienFileTmpl, alienFile, cb) {
 
 	if (!(alienFileTmpl instanceof io)) {
 		var enchanted = this.isEnchantedValue (alienFileTmpl);
@@ -331,12 +348,16 @@ ConfFuIO.prototype.analyzeAlien = function (alienFileTmpl, alienFile, cb) {
 		var value = data.toString();
 
 		var enchanted = self.isEnchantedValue (value);
-		if (enchanted) {
+		if (!enchanted) {
+			self.ioWait --;
+			cb && cb ();
+			return;
+		}
 
 			var interpolated = enchanted.interpolated (self.config);
-//			console.log ('ALIEN INTERPOLATE', interpolated === undefined, enchanted.asVariables);
+			// console.log ('ALIEN INTERPOLATE', interpolated === undefined, enchanted.asVariables);
 			if (interpolated === undefined) {
-//				console.log ('ALIEN INTERPOLATE ERROR');
+				// console.log ('ALIEN INTERPOLATE ERROR');
 				self.emit ('error', 'alien', 'variables', enchanted.asVariables);
 				self.setVariables (enchanted.asVariables, true);
 				// TODO: emit something if cb is undefined?
@@ -344,7 +365,6 @@ ConfFuIO.prototype.analyzeAlien = function (alienFileTmpl, alienFile, cb) {
 				cb && cb (enchanted.error, interpolated);
 				return;
 			}
-		}
 
 		if (alienFile === false || alienFile === null) {
 			// WTF: use case?
@@ -368,71 +388,6 @@ ConfFuIO.prototype.analyzeAlien = function (alienFileTmpl, alienFile, cb) {
 			self.ioWait --;
 			cb && cb (err, interpolated, alienFile);
 		});
-
-
-	});
-}
-
-
-ConfFuIO.prototype.interpolateAlien = function (alienFileTmpl, alienFile, cb) {
-	if (!(alienFileTmpl instanceof io)) {
-		alienFileTmpl = new io (alienFileTmpl);
-	}
-
-	var self = this;
-
-	self.ioWait ++;
-
-	alienFileTmpl.readFile (function (err, data) {
-		if (err) {
-			self.emit ('error', 'alien', 'file', err, alienFileTmpl.path);
-			self.ioWait --;
-			return;
-		}
-
-		// TODO: stream parser
-		var value = data.toString();
-
-		var enchanted = self.isEnchantedValue (value);
-		if (enchanted) {
-
-			var interpolated = enchanted.interpolated (self.config);
-			// console.log ('ALIEN INTERPOLATE', interpolated === undefined, enchanted.asVariables);
-			if (interpolated === undefined) {
-				// console.log ('ALIEN INTERPOLATE ERROR');
-				self.emit ('error', 'alien', 'variables', enchanted.asVariables);
-				self.setVariables (enchanted.asVariables, true);
-				// TODO: emit something if cb is undefined?
-				self.ioWait --;
-				cb && cb (enchanted.error, interpolated);
-				return;
-			}
-		}
-
-		if (alienFile === false || alienFile === null) {
-			// TODO: emit something if cb is undefined?
-			self.ioWait --;
-			cb && cb (error, interpolated);
-
-			return;
-		} else if ((alienFile === true || alienFile === undefined) && alienFileTmpl.extension === self.alienExt) {
-			alienFile = new io (alienFileTmpl.path.slice (0, -1 * (self.alienExt.length + 1)));
-		} else if (!(alienFile instanceof io)) { // assumed string path
-			var enchanted = self.isEnchantedValue (alienFile);
-			if (enchanted) {
-				var realAlienFile = enchanted.interpolated (self.config);
-				if (realAlienFile)
-					alienFile = realAlienFile;
-			}
-			alienFile = new io (alienFile);
-		}
-
-		alienFile.writeFile (interpolated, function (err) {
-			self.ioWait --;
-			cb && cb (err, interpolated, alienFile);
-		});
-
-
 	});
 }
 
@@ -517,7 +472,7 @@ ConfFuIO.prototype.searchForFile = function (name, dir, done) {
 ConfFuIO.prototype.onInstanceRead = function (err, data) {
 	if (err) {
 		this.emit ('error', 'instance', 'file', err, this.instanceFile.path);
-		this.onFixupRead (true); // with instance we decide which fixup to use
+		this.onFixupRead ("cannot read fixup if instance undefined"); // with instance we decide which fixup to use
 		return;
 	}
 
@@ -575,7 +530,7 @@ ConfFuIO.prototype.onFixupRead = function (err, data, parsed) {
 	}
 
 	if (!parsed || parsed.error) {
-		if (!parsed) console.log (arguments);
+		// if (!parsed) console.log (arguments);
 		this.emit ('error', 'fixup', 'parse', (parsed ? parsed.error : null), this.fixupFile); // type error when parsed not defined
 		return;
 	}
@@ -593,12 +548,16 @@ ConfFuIO.prototype.onConfigRead = function (err, data, parsed) {
 		var message = "can't access '" + this.configFile.shortPath() + "' file ("+err.code+")";
 		if (this.verbose) console.error (paint.confFu(), paint.error (message));
 		this.emit ('error', 'core', 'file', err, this.configFile);
+		this.checkList.coreLoaded = false;
+		this.applyFixup ();
 		return;
 	}
 	if (!parsed || parsed.error) {
 		var message = "cannot parse '" + this.configFile.shortPath() + "' file";
 		if (this.verbose) console.error (paint.confFu(), paint.error (message));
 		this.emit ('error', 'core', 'parse', (parsed ? parsed.error : null), this.configFile);
+		this.checkList.coreLoaded = false;
+		this.applyFixup ();
 		return;
 	}
 
@@ -616,15 +575,22 @@ ConfFuIO.prototype.onConfigRead = function (err, data, parsed) {
 		self.placeholders = placeholders;
 
 		if (err) {
-			console.error (err);
+			// console.error (err);
 			console.warn ("Couldn't load includes.");
 			// actually, failure when loading includes is a warning, not an error
+			// this.emit ('error', 'core', 'file', err, this.configFile);
+
+			this.checkList.coreLoaded = false;
+			this.applyFixup ();
+
+			return;
+
 		}
 
 		self.config = config;
 
 		self.emit ('configLoaded');
-	});
+	}.bind (this));
 };
 
 var configCache = {};
@@ -706,17 +672,25 @@ ConfFuIO.prototype.loadIncludes = function (config, level, basePath, cb) {
 		levelHash[key] = true;
 	});
 
-	function onLoad() {
+	var errors = [];
+
+	function onLoad (err) {
+		if (err) {
+			self.emit.apply (self, err);
+			errors.push (err);
+		}
 		cnt += 1;
 		if (cnt == len) {
-			cb (null, config, variables, placeholders);
+			cb (errors.length ? errors : null, config, variables, placeholders);
 		}
 	}
 
-	function onError(err) {
-		console.log('[WARNING] Level:', level, 'is not correct.\nError:', paint.error (err));
-		cb(err, config, variables, placeholders);
-	}
+//	function onError(err) {
+//		console.log('[WARNING] Level:', level, 'is not correct.\nError:', paint.error (err));
+//		cb(err, config, variables, placeholders);
+//	}
+
+
 
 	function iterateNode (node, key, depth) {
 		var value = node[key];
@@ -768,12 +742,14 @@ ConfFuIO.prototype.loadIncludes = function (config, level, basePath, cb) {
 
 			incPathIO.readAndParseFile (function (err, data, parsed) {
 				if (err) {
-					self.emit ('error', 'include', 'file', null, basePath);
+					var oops = ['error', 'include', 'file', err, basePath];
+					onLoad (oops);
 					return;
 				}
 
 				if (!parsed || parsed.error) {
-					self.emit ('error', 'include', 'parse', (parsed ? parsed.error : null), basePath); // TODO: type error when parsed not defined
+					var oops = ['error', 'include', 'parse', (parsed ? parsed.error : null), basePath];
+					onLoad(oops);
 					return;
 				}
 
@@ -797,7 +773,7 @@ ConfFuIO.prototype.loadIncludes = function (config, level, basePath, cb) {
 
 //	console.log('including:', level, config);
 
-	!len && cb(null, config, variables, placeholders);
+	!len && cb(errors.length ? errors : null, config, variables, placeholders);
 };
 
 ConfFuIO.prototype.getFilePath = function (baseDir, pathTemplate) {

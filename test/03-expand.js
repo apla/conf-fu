@@ -20,6 +20,40 @@ var globalVerbose = process.env.VERBOSE || false;
 //console.log ("<#default:12345>".match (regexp2));
 //console.log ("<<filename>>".match (regexp3));
 
+describe (baseName+" basic functions", function () {
+
+	it ("is empty", function () {
+		assert (confFu.isEmpty ({}));
+		assert (confFu.isEmpty ([]));
+		assert (confFu.isEmpty (""));
+		assert (confFu.isEmpty (0));
+		assert (confFu.isEmpty (null));
+		assert (confFu.isEmpty (undefined));
+	});
+
+});
+
+
+describe (baseName+" external usage", function () {
+
+	it ("with include enchantment", function () {
+		var enchanted = confFu.prototype.isEnchantedValue.call ({}, "<<include>>");
+		return "include" in enchanted;
+	});
+
+	it ("with variable enchantment", function () {
+		var enchanted = confFu.prototype.isEnchantedValue.call ({}, "<*db.mongo.port>");
+		assert ("variable" in enchanted);
+		var value = enchanted.interpolated ({db: {mongo: {port: 123}}});
+		assert (value === 123);
+	});
+
+	it ("with nothing to enchant", function () {
+		var enchanted = confFu.prototype.isEnchantedValue.call ({}, 345);
+		return !enchanted;
+	});
+
+});
 
 describe (baseName+" parse string", function () {
 
@@ -164,6 +198,12 @@ describe (baseName+" format string", function () {
 		// console.log (enchanted);
 		assert (interpolated === undefined);
 	});
+	it ("bool without value", function () {
+		var enchanted = confFu.prototype.isEnchantedValue ("<$bool:service_port>");
+		var interpolated = enchanted.interpolated (data);
+		// console.log (enchanted);
+		assert (interpolated === undefined);
+	});
 	it ("bool with default", function () {
 		var enchanted = confFu.prototype.isEnchantedValue ("<$bool:some_option=true>");
 		assert (enchanted[0].type === 'bool');
@@ -189,10 +229,22 @@ describe (baseName+" format string", function () {
 		assert (interpolated === 'off');
 		return "variable" in enchanted;
 	});
-	it.skip ("bool default interpolated", function () {
-		var enchanted = confFu.prototype.isEnchantedValue ("<$bool(on|off):db_unix_sock=on>");
+	it ("bool default interpolated true", function () {
+		var enchanted = confFu.prototype.isEnchantedValue ("<$bool(on|off):xxx=on>");
+		var interpolated = enchanted.interpolated (data);
+		assert (interpolated === 'on');
+		return "variable" in enchanted;
+	});
+	it ("bool default interpolated false", function () {
+		var enchanted = confFu.prototype.isEnchantedValue ("<$bool(on|off):xxx=off>");
 		var interpolated = enchanted.interpolated (data);
 		assert (interpolated === 'off');
+		return "variable" in enchanted;
+	});
+	it ("bool default interpolated undefined", function () {
+		var enchanted = confFu.prototype.isEnchantedValue ("<$bool(on|off):xxx=yyy>");
+		var interpolated = enchanted.interpolated (data);
+		assert (interpolated === undefined);
 		return "variable" in enchanted;
 	});
 	it ("string is fine with any data type", function () {
@@ -207,6 +259,13 @@ describe (baseName+" format string", function () {
 		assert (enchanted[0].type === 'string');
 		var interpolated = enchanted.interpolated (data);
 		assert (interpolated === "222");
+		return "variable" in enchanted;
+	});
+	it ("string with incompatible data: object", function () {
+		var enchanted = confFu.prototype.isEnchantedValue ("<$string:object>");
+		assert (enchanted[0].type === 'string');
+		var interpolated = enchanted.interpolated (data);
+		assert (interpolated === undefined);
 		return "variable" in enchanted;
 	});
 	it ("quoted string", function () {
