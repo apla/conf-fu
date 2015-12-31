@@ -12,6 +12,8 @@ var ConfFu = function (options) {
 
 	this.setupVariables = options.setupVariables || {};
 
+	this.marks = options.marks;
+
 	this.ready = this.applyFixup ();
 };
 

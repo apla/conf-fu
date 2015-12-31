@@ -76,6 +76,8 @@ function ConfFuIO (options) {
 		alienRead:      null
 	};
 
+	this.marks = options.marks;
+
 	var self = this;
 
 	this.on ('configLoaded', function () {
