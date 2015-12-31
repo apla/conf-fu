@@ -55,7 +55,9 @@ io.prototype.readAndParseFile = function (cb) {
 		}
 
 		var parsedObject = self.parseBuffer (data);
-		cb (null, data, parsedObject);
+
+		err = parsedObject.error;
+		cb (err, data, parsedObject);
 	});
 }
 
@@ -66,12 +68,7 @@ io.prototype.serializeToFile = function (data, cb) {
 	var serializedData = this.stringify (data);
 
 	this.writeFile (serializedData, function (err, data) {
-		if (err) {
-			cb (err);
-			return;
-		}
-
-		cb (null);
+		cb (err);
 	});
 }
 

@@ -521,7 +521,7 @@ ConfFuIO.prototype.setVariables = function (fixupVars, force) {
 
 ConfFuIO.prototype.onFixupRead = function (err, data, parsed) {
 
-	if (err) {
+	if (err && !data) {
 		this.emit ('error', 'fixup', 'file', err, this.fixupFile);
 		this.checkList.fixupLoaded = false;
 		this.fixup = {};
@@ -544,7 +544,7 @@ ConfFuIO.prototype.onFixupRead = function (err, data, parsed) {
 
 ConfFuIO.prototype.onConfigRead = function (err, data, parsed) {
 
-	if (err) {
+	if (err && !data) {
 		var message = "can't access '" + this.configFile.shortPath() + "' file ("+err.code+")";
 		if (this.verbose) console.error (paint.confFu(), paint.error (message));
 		this.emit ('error', 'core', 'file', err, this.configFile);
@@ -552,6 +552,7 @@ ConfFuIO.prototype.onConfigRead = function (err, data, parsed) {
 		this.applyFixup ();
 		return;
 	}
+
 	if (!parsed || parsed.error) {
 		var message = "cannot parse '" + this.configFile.shortPath() + "' file";
 		if (this.verbose) console.error (paint.confFu(), paint.error (message));

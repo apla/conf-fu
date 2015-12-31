@@ -67,6 +67,21 @@ describe (baseName+" check formats", function () {
 
 	var ymlData;
 
+	it ("wrong yml", function (done) {
+		var fileIO = new io (path.join (__dirname, baseName, 'wrong.yml'));
+
+		assert (typeof fileIO.parseBuffer === 'function');
+		assert (typeof fileIO.stringify === 'function');
+		// assert (typeof fileIO.detectedFormat === 'ini');
+
+		fileIO.readAndParseFile (function (err, data, parsed) {
+
+			assert (err);
+			done ();
+		});
+
+	});
+
 	it ("can use yml", function (done) {
 		var fileIO = new io (path.join (__dirname, baseName, 'test.yml'));
 

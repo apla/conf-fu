@@ -127,6 +127,7 @@ describe (baseName+" loading config", function () {
 			if (eOrigin === 'fixup' && eType === 'parse') {
 				done();
 			} else {
+				console.log (arguments);
 				assert (false, 'just got unexpected error');
 			}
 
