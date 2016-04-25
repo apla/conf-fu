@@ -54,6 +54,11 @@ io.prototype.readAndParseFile = function (cb) {
 			return;
 		}
 
+		if (!self.parseBuffer) {
+			cb ("Cannot determine file format for " + self.path);
+			return;
+		}
+
 		var parsedObject = self.parseBuffer (data);
 
 		err = parsedObject.error;
