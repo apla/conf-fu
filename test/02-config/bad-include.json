@@ -1,3 +1,4 @@
 {
-  "file": "<<aaa.json>>"
+  "file": "<<aaa.json>>",
+  "unknown-format": "<<instance>>"
 }
