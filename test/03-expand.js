@@ -173,10 +173,17 @@ describe (baseName+" format string", function () {
 		var enchanted = confFu.prototype.isEnchantedValue ("<$int:http_port=8080>");
 		var interpolated = enchanted.interpolated (data);
 		assert (interpolated === 808080);
+		var enchanted = confFu.prototype.isEnchantedValue ("<$int:http_port|8080>");
+		var interpolated = enchanted.interpolated (data);
+		assert (interpolated === 808080);
 		return;
 	});
 	it ("int with default and no value in dict", function () {
 		var enchanted = confFu.prototype.isEnchantedValue ("<$int:other_port=8051>");
+		var interpolated = enchanted.interpolated (data);
+		assert (interpolated.constructor === Number);
+		assert (interpolated === 8051); // should be int, not string
+		var enchanted = confFu.prototype.isEnchantedValue ("<$int:other_port|8051>");
 		var interpolated = enchanted.interpolated (data);
 		assert (interpolated.constructor === Number);
 		assert (interpolated === 8051); // should be int, not string

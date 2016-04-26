@@ -332,7 +332,8 @@ ConfFu.prototype.isEnchantedValue = function (value, marksOverride, types, opera
 		start: '<',
 		end: '>',
 		path: '.',
-		placeholder: '#'
+		placeholder: '#',
+		defaultValue: '=|', // this mark is used inside of regexp character set, so it is means '=' OR '|'
 	};
 	marksOverride = marksOverride || this.marks || {};
 	extend (marks, marksOverride);
@@ -343,7 +344,7 @@ ConfFu.prototype.isEnchantedValue = function (value, marksOverride, types, opera
 	var vartypesRe = Object.keys (types).join ("|") || "\\w+";
 	var variableReg = new RegExp (
 		marks.start
-		+"(["+Object.keys (operations)+"])((("+vartypesRe+")(\\(([^\)]*)\\))?:)?([^"+marks.end+"=]+)(=([^"+marks.end+"]*))?)"
+		+"(["+Object.keys (operations)+"])((("+vartypesRe+")(\\(([^\)]*)\\))?:)?([^"+marks.end+marks.defaultValue+"]+)(["+marks.defaultValue+"]([^"+marks.end+"]*))?)"
 		+marks.end,
 	"ig");
 	var placeholderRe = new RegExp ("^"+marks.start+"((\#)((optional|default):)?([^"+marks.end+"]+))"+marks.end+"$", "i");
