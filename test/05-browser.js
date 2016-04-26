@@ -11,6 +11,18 @@ var configDir = path.join (__dirname, baseName);
 
 var globalVerbose = process.env.VERBOSE || false;
 
+describe (baseName+" launch base.js without anything", function () {
+
+	it ("should give error", function () {
+		var config = new confFu ({});
+
+		config.verbose = globalVerbose || false;
+
+		assert (!config.ready, 'conf-fu without config cannot be ready');
+	});
+});
+
+
 describe (baseName+" launch base.js with populated config and fixup objects", function () {
 
 	it ("should return config", function () {

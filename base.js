@@ -1,7 +1,8 @@
+/**
+ * conf-fu constructor
+ * @param {object} options initialization options
+ */
 var ConfFu = function (options) {
-	if (!options || !options.config) {
-		throw "no options defined, please supply config and fixup";
-	}
 
 	this.config = options.config;
 	this.fixup  = options.fixup;
@@ -13,6 +14,12 @@ var ConfFu = function (options) {
 	this.setupVariables = options.setupVariables || {};
 
 	this.marks = options.marks;
+	if (!options || !options.config) {
+		this.ready = false;
+		this.error = "no options defined, please supply config and fixup";
+		return;
+	}
+
 
 	this.ready = this.applyFixup ();
 };
