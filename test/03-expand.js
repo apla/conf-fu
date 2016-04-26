@@ -223,6 +223,17 @@ describe (baseName+" format string", function () {
 		interpolated = enchanted.interpolated (data);
 		// console.log (interpolated, interpolated.constructor);
 		assert (interpolated === false);
+		var enchanted = confFu.prototype.isEnchantedValue ("<=bool:some_option=true>");
+		assert (enchanted[0].type === 'bool');
+		assert (enchanted[0].default === 'true');
+		var interpolated = enchanted.interpolated (data);
+		assert (interpolated === true);
+		enchanted = confFu.prototype.isEnchantedValue ("<~bool:some_option=false>");
+		assert (enchanted[0].type === 'bool');
+		assert (enchanted[0].default === 'false');
+		interpolated = enchanted.interpolated (data);
+		// console.log (interpolated, interpolated.constructor);
+		assert (interpolated === false);
 	});
 	it ("bool with custom status and default", function () {
 		var enchanted = confFu.prototype.isEnchantedValue ("<$bool(on|off):db_tcp_sock=off>");
