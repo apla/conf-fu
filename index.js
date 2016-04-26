@@ -189,9 +189,15 @@ ConfFuIO.paint = paint;
 ConfFuIO.prototype.emitDelayed = function (message, eOrigin, eType, eData, eFile) {
 	process.nextTick (function () {
 		this.emit (message, eOrigin, eType, eData, eFile);
-		if (message === 'error' && eOrigin === 'core') {
-			this.checkList.coreLoaded = false;
-			this.applyFixup ();
+		if (message === 'error') {
+			if (eOrigin === 'core') {
+				this.checkList.coreLoaded = false;
+				this.applyFixup ();
+			} else if (eOrigin === 'fixup') {
+				// TODO
+				// console.log (this.checkList, this.ioWait);
+				// if (this.checkList.coreLoaded === null) this.emit ('notReady');
+			}
 		}
 	}.bind (this));
 }
