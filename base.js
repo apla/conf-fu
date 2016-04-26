@@ -96,7 +96,7 @@ ConfFu.isEmpty = function isEmpty (value) {
 }
 
 var pathToVal = ConfFu.pathToVal = function (dict, path, value, method) {
-	var chunks = 'string' == typeof path ? path.split('.') : path;
+	var chunks = 'string' == typeof path ? path.split((this && this.marks && this.marks.path) || '.') : path;
 	var chunk = chunks[0];
 	var rest = chunks.slice(1);
 	var oldValue = dict[chunk];
